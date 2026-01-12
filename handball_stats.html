@@ -1,0 +1,510 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Handball Game Stats – Simple Tracker</title>
+  <style>
+    :root{
+      --bg:#0b1220; --panel:#121a2b; --accent:#4cc9f0; --accent2:#c77dff;
+      --text:#e6f1ff; --muted:#9fb3c8; --bad:#ef476f; --ok:#06d6a0; --warn:#ffd166;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif}
+    header{padding:12px 16px;background:linear-gradient(90deg,var(--panel),#0f1a33)}
+    h1{margin:0;font-size:20px}
+    main{padding:16px;max-width:1100px;margin:auto}
+    .grid{display:grid;gap:12px}
+    @media(min-width:800px){.grid-2{grid-template-columns:1fr 1fr}}
+    .card{background:var(--panel);border:1px solid #1f2a44;border-radius:12px;padding:12px}
+    label{display:block;margin:8px 0 6px;color:var(--muted);font-size:13px}
+    input[type="text"],input[type="number"],select{width:100%;padding:10px 12px;border-radius:8px;border:1px solid #2a3a5c;background:#0f1730;color:var(--text)}
+    .btn{appearance:none;border:1px solid #244; background:#0f1730; color:var(--text); padding:10px 12px; border-radius:10px; cursor:pointer}
+    .btn.primary{background:linear-gradient(180deg,var(--accent),#2895be); border-color:#1d6b87; color:#062231; font-weight:700}
+    .btn.success{background:linear-gradient(180deg,var(--ok),#0ab77f); border-color:#0a8f66; color:#062231; font-weight:700}
+    .btn.warn{background:linear-gradient(180deg,var(--warn),#e3b23b); border-color:#b9902f; color:#3d2b00; font-weight:700}
+    .btn.danger{background:linear-gradient(180deg,var(--bad),#cc3557); border-color:#9c2a44; color:#33010f; font-weight:700}
+    .btn.ghost{background:transparent;border-color:#2a3a5c}
+    .row{display:flex;gap:8px;flex-wrap:wrap}
+    .timer{font-variant-numeric:tabular-nums;font-size:40px;font-weight:800;letter-spacing:1px}
+    .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:#0b1430;border:1px solid #2a3a5c;color:var(--muted);font-size:12px}
+    .player-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+    .player{padding:12px;border:1px solid #1f2a44;border-radius:12px;background:#0e1833}
+    .player h4{margin:0 0 8px 0}
+    .player .role{font-size:12px;color:var(--muted)}
+    .actions{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px}
+    .actions .wide{grid-column:1/-1}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th,td{padding:8px;border-bottom:1px solid #22324f}
+    tr:hover{background:#0f1a35}
+    .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+    .kpi .k{background:#0e1833;border:1px solid #1f2a44;border-radius:12px;padding:10px}
+    .muted{color:var(--muted)}
+    .small{font-size:12px}
+    .sticky-footer{position:sticky;bottom:0;left:0;right:0;background:linear-gradient(180deg,rgba(11,18,32,0),var(--bg) 25%);padding:12px 0;margin-top:8px}
+
+    /* Modal */
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.5);z-index:1000}
+    .modal .content{width:min(520px,92vw);background:var(--panel);border:1px solid #1f2a44;border-radius:12px;padding:12px}
+    .modal .list{max-height:50vh;overflow:auto}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Handball Game Stats – Simple Tracker</h1>
+  </header>
+  <main>
+    <!-- PRE-GAME SETUP -->
+    <section id="setup" class="grid grid-2">
+      <div class="card">
+        <h2 style="margin-top:0">1) Game details</h2>
+        <label>Opponent (optional)
+          <input id="opponent" type="text" placeholder="Opponent name" />
+        </label>
+        <label>Competition / Notes (optional)
+          <input id="notes" type="text" placeholder="League, friendly, etc." />
+        </label>
+        <div class="row" style="align-items:center;justify-content:space-between;margin-top:8px">
+          <div>
+            <label>Period length (minutes)
+              <input id="periodMinutes" type="number" min="1" max="60" value="30" />
+            </label>
+          </div>
+          <div>
+            <span class="pill">Two periods</span>
+          </div>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <button class="btn ghost" onclick="loadFromLocal()">Load last unsent game</button>
+          <button class="btn ghost" onclick="clearLocal()">Clear local</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2 style="margin-top:0">2) Select attending players</h2>
+        <div id="rosterBox" class="grid" style="grid-template-columns:1fr 120px 120px;gap:6px"></div>
+        <div class="row" style="margin-top:8px">
+          <button class="btn" onclick="addCustomPlayer()">+ Add player</button>
+        </div>
+      </div>
+      <div class="card" style="grid-column:1/-1">
+        <h2 style="margin-top:0">3) Start game</h2>
+        <div class="row">
+          <button class="btn primary" onclick="startGame()">Start Game (go to Period 1)</button>
+        </div>
+        <p class="small muted">Tip: you can always come back to setup before submitting.</p>
+      </div>
+    </section>
+
+    <!-- IN-GAME -->
+    <section id="ingame" style="display:none">
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="row" style="align-items:center;justify-content:space-between">
+            <div>
+              <div class="pill">Period <span id="periodLabel">1</span> / 2</div>
+              <div class="timer" id="clock">00:00</div>
+              <div class="small muted">Tap Start/Stop to control the clock. Events are time‑stamped.</div>
+            </div>
+            <div class="grid" style="gap:8px;min-width:220px">
+              <button id="btnStart" class="btn success" onclick="toggleClock()">Start</button>
+              <button class="btn warn" onclick="endPeriod()">End current period</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="kpi">
+            <div class="k"><div class="small muted">Goals</div><div id="kpiGoals" style="font-size:22px;font-weight:800">0</div></div>
+            <div class="k"><div class="small muted">Assists</div><div id="kpiAssists" style="font-size:22px;font-weight:800">0</div></div>
+            <div class="k"><div class="small muted">Misses</div><div id="kpiMiss" style="font-size:22px;font-weight:800">0</div></div>
+            <div class="k"><div class="small muted">Saves</div><div id="kpiSaves" style="font-size:22px;font-weight:800">0</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-top:0">Quick actions</h3>
+        <div id="players" class="player-list"></div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-top:0">Event log</h3>
+        <div class="row" style="justify-content:flex-end;margin-bottom:8px">
+          <button class="btn ghost" onclick="undoLast()">Undo last</button>
+          <button class="btn ghost" onclick="downloadCSV()">Download CSV</button>
+        </div>
+        <div style="overflow:auto">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Period</th>
+                <th>Time</th>
+                <th>Player</th>
+                <th>Role</th>
+                <th>Event</th>
+                <th>Assist</th>
+              </tr>
+            </thead>
+            <tbody id="eventsBody"></tbody>
+          </table>
+        </div>
+        <div class="sticky-footer row" style="justify-content:space-between">
+          <div class="small muted">Data is kept locally until you submit.</div>
+          <div class="row">
+            <button class="btn" onclick="goBackToSetup()">Back to setup</button>
+            <button class="btn primary" onclick="submitToSheets()">Submit game → Google Sheet</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Assist picker modal -->
+  <div id="assistModal" class="modal" role="dialog" aria-modal="true" aria-label="Select assist player">
+    <div class="content">
+      <h3 style="margin-top:0">Select assist</h3>
+      <div id="assistList" class="list"></div>
+      <div class="row" style="justify-content:flex-end;margin-top:8px">
+        <button class="btn" onclick="closeAssistModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ======== CONFIG ========
+    // Paste your Google Apps Script Web App URL here (created from the instructions below).
+    const GOOGLE_SCRIPT_URL = "PASTE_WEB_APP_URL_HERE"; // e.g., https://script.google.com/macros/s/AKfycbx.../exec
+
+    // Default roster
+    const DEFAULT_ROSTER = ["Per","Paal","Espen","Truls","Ole"];
+
+    // ======== STATE ========
+    const state = {
+      metadata: { date: new Date().toISOString().slice(0,10), opponent: "", notes: "", periodMinutes: 30 },
+      players: [], // {name, role: 'Field'|'Goalkeeper', attending: true}
+      attending: [], // names
+      currentPeriod: 1,
+      clock: { running:false, startMs:0, elapsedMs:0 },
+      events: [], // {period, time, player, role, type, assist}
+      tempGoalForAssist: null, // store when waiting for assist selection
+    };
+
+    function $(id){ return document.getElementById(id); }
+
+    // ======== SETUP ROSTER UI ========
+    function init(){
+      state.players = DEFAULT_ROSTER.map(n => ({name:n, role:'Field', attending:false}));
+      renderRoster();
+      restoreLocalIfAny();
+    }
+
+    function renderRoster(){
+      const box = $("rosterBox");
+      box.innerHTML = "";
+      // headers
+      const header = document.createElement('div'); header.className='grid'; header.style.gridTemplateColumns='1fr 120px 120px'; header.style.gap='6px';
+      header.innerHTML = `<div class="small muted">Player</div><div class="small muted">Attending</div><div class="small muted">Role</div>`;
+      box.appendChild(header);
+
+      state.players.forEach((p, idx) => {
+        const row = document.createElement('div');
+        row.className='grid';
+        row.style.gridTemplateColumns='1fr 120px 120px';
+        row.style.gap='6px';
+        row.innerHTML = `
+          <input type="text" value="${p.name}" data-idx="${idx}" oninput="onRename(event)" />
+          <select data-idx="${idx}" onchange="onAttendChange(event)">
+            <option value="false" ${!p.attending?'selected':''}>No</option>
+            <option value="true" ${p.attending?'selected':''}>Yes</option>
+          </select>
+          <select data-idx="${idx}" onchange="onRoleChange(event)">
+            <option ${p.role==='Field'?'selected':''}>Field</option>
+            <option ${p.role==='Goalkeeper'?'selected':''}>Goalkeeper</option>
+          </select>
+        `;
+        box.appendChild(row);
+      });
+    }
+
+    function onRename(e){ const i=+e.target.dataset.idx; state.players[i].name = e.target.value.trim(); persistLocal(); }
+    function onAttendChange(e){ const i=+e.target.dataset.idx; state.players[i].attending = e.target.value==='true'; persistLocal(); }
+    function onRoleChange(e){ const i=+e.target.dataset.idx; state.players[i].role = e.target.value; persistLocal(); }
+
+    function addCustomPlayer(){
+      state.players.push({name:"New Player", role:'Field', attending:true});
+      renderRoster();
+      persistLocal();
+    }
+
+    // ======== GAME FLOW ========
+    function startGame(){
+      state.metadata.opponent = $("opponent").value.trim();
+      state.metadata.notes = $("notes").value.trim();
+      state.metadata.periodMinutes = Math.max(1, parseInt($("periodMinutes").value || '30', 10));
+      state.attending = state.players.filter(p=>p.attending).map(p=>p.name);
+      if(state.attending.length === 0){ alert('Select at least one attending player.'); return; }
+      $("setup").style.display='none';
+      $("ingame").style.display='block';
+      state.currentPeriod = 1;
+      state.clock = {running:false,startMs:0,elapsedMs:0};
+      $("periodLabel").textContent = '1';
+      updateClockUI();
+      renderPlayers();
+      renderEvents();
+      persistLocal();
+    }
+
+    function goBackToSetup(){
+      $("ingame").style.display='none';
+      $("setup").style.display='grid';
+      persistLocal();
+    }
+
+    // ======== CLOCK ========
+    let _tickHandle = null;
+    function toggleClock(){
+      if(state.clock.running){ // pause
+        state.clock.running=false;
+        clearInterval(_tickHandle); _tickHandle=null;
+        $("btnStart").textContent='Start'; $("btnStart").classList.add('success');
+      } else { // start
+        state.clock.running=true;
+        state.clock.startMs = Date.now() - state.clock.elapsedMs;
+        _tickHandle = setInterval(tick, 250);
+        $("btnStart").textContent='Stop'; $("btnStart").classList.remove('success');
+      }
+      persistLocal();
+    }
+
+    function tick(){
+      const periodMs = state.metadata.periodMinutes * 60 * 1000;
+      state.clock.elapsedMs = Math.min(periodMs, Date.now() - state.clock.startMs);
+      updateClockUI();
+      if(state.clock.elapsedMs >= periodMs){
+        // auto end period
+        endPeriod();
+      }
+    }
+
+    function updateClockUI(){
+      const t = millisToClock(state.clock.elapsedMs);
+      $("clock").textContent = t;
+    }
+
+    function millisToClock(ms){
+      const total = Math.floor(ms/1000);
+      const mm = String(Math.floor(total/60)).padStart(2,'0');
+      const ss = String(total%60).padStart(2,'0');
+      return `${mm}:${ss}`;
+    }
+
+    function nowClock(){ return millisToClock(state.clock.elapsedMs); }
+
+    function endPeriod(){
+      if(state.currentPeriod === 1){
+        state.currentPeriod = 2;
+        $("periodLabel").textContent = '2';
+        // reset clock
+        state.clock = {running:false,startMs:0,elapsedMs:0};
+        clearInterval(_tickHandle); _tickHandle=null;
+        $("btnStart").textContent='Start'; $("btnStart").classList.add('success');
+        alert('Period 1 ended. You can start Period 2 when ready.');
+      } else {
+        state.clock.running=false; clearInterval(_tickHandle); _tickHandle=null;
+        updateClockUI();
+        alert('Period 2 ended. You can still add/edit events or submit the game.');
+      }
+      persistLocal();
+    }
+
+    // ======== RENDER PLAYERS & ACTIONS ========
+    function renderPlayers(){
+      const container = $("players");
+      container.innerHTML = '';
+      const attending = state.players.filter(p=>p.attending);
+      attending.forEach(p => {
+        const div = document.createElement('div');
+        div.className='player';
+        div.innerHTML = `
+          <h4>${p.name}</h4>
+          <div class="role">${p.role}</div>
+          <div class="actions">${actionsHtml(p)}</div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function actionsHtml(p){
+      if(p.role === 'Goalkeeper'){
+        return `
+          <button class="btn" onclick="addEvent('${p.name}','Goalkeeper','Save')">Save</button>
+          <button class="btn danger" onclick="addEvent('${p.name}','Goalkeeper','Goal Against')">Goal Against</button>
+          <button class="btn ghost wide" onclick="addEvent('${p.name}','Goalkeeper','Goal')">Goal (GK)</button>
+        `;
+      }
+      // Field player
+      return `
+        <button class="btn success" onclick="goalWithAssist('${p.name}','Field')">Goal</button>
+        <button class="btn warn" onclick="addEvent('${p.name}','Field','Miss')">Miss</button>
+        <button class="btn danger" onclick="addEvent('${p.name}','Field','Technical Foul')">Technical Foul</button>
+      `;
+    }
+
+    // ======== EVENTS ========
+    function addEvent(player, role, type, assist){
+      const ev = { period: state.currentPeriod, time: nowClock(), player, role, type, assist: assist||'' };
+      state.events.push(ev);
+      renderEvents();
+      persistLocal();
+    }
+
+    function goalWithAssist(player, role){
+      // store temp goal event and open modal
+      state.tempGoalForAssist = { player, role };
+      openAssistModal(player);
+    }
+
+    function renderEvents(){
+      const body = $("eventsBody");
+      body.innerHTML='';
+      state.events.forEach((ev, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="small muted">${i+1}</td>
+          <td>${ev.period}</td>
+          <td>${ev.time}</td>
+          <td>${ev.player}</td>
+          <td class="small muted">${ev.role}</td>
+          <td>${ev.type}</td>
+          <td>${ev.assist||''}</td>
+        `;
+        body.appendChild(tr);
+      });
+      updateKPIs();
+    }
+
+    function updateKPIs(){
+      const goals = state.events.filter(e=>e.type==='Goal').length;
+      const assists = state.events.filter(e=>e.assist).length;
+      const miss = state.events.filter(e=>e.type==='Miss').length;
+      const saves = state.events.filter(e=>e.type==='Save').length;
+      $("kpiGoals").textContent = goals;
+      $("kpiAssists").textContent = assists;
+      $("kpiMiss").textContent = miss;
+      $("kpiSaves").textContent = saves;
+    }
+
+    function undoLast(){
+      state.events.pop();
+      renderEvents();
+      persistLocal();
+    }
+
+    // ======== ASSIST MODAL ========
+    function openAssistModal(scorer){
+      const modal = $("assistModal");
+      const list = $("assistList");
+      list.innerHTML = '';
+      const attending = state.players.filter(p=>p.attending && p.role==='Field' && p.name!==scorer);
+      const noneBtn = document.createElement('button');
+      noneBtn.className='btn ghost';
+      noneBtn.textContent = 'No assist';
+      noneBtn.style.marginBottom='8px';
+      noneBtn.onclick = () => { addEvent(scorer,'Field','Goal',''); closeAssistModal(); };
+      list.appendChild(noneBtn);
+      attending.forEach(p=>{
+        const b = document.createElement('button');
+        b.className='btn'; b.style.display='block'; b.style.width='100%'; b.style.margin='4px 0';
+        b.textContent = p.name;
+        b.onclick = () => { addEvent(scorer,'Field','Goal',p.name); closeAssistModal(); };
+        list.appendChild(b);
+      });
+      modal.style.display='flex';
+    }
+    function closeAssistModal(){ $("assistModal").style.display='none'; state.tempGoalForAssist=null; }
+
+    // ======== LOCAL STORAGE ========
+    const LS_KEY = 'handball_stats_game_v1';
+    function persistLocal(){
+      const snapshot = { state };
+      localStorage.setItem(LS_KEY, JSON.stringify(snapshot));
+    }
+    function restoreLocalIfAny(){
+      const raw = localStorage.getItem(LS_KEY);
+      if(!raw) return;
+      try{
+        const snap = JSON.parse(raw);
+        if(snap && snap.state){ Object.assign(state, snap.state); }
+      }catch{}
+      // Re-render everything from restored state
+      $("opponent").value = state.metadata.opponent||'';
+      $("notes").value = state.metadata.notes||'';
+      $("periodMinutes").value = state.metadata.periodMinutes||30;
+      renderRoster();
+    }
+    function loadFromLocal(){
+      restoreLocalIfAny();
+      alert('Loaded any saved game data from this device.');
+    }
+    function clearLocal(){ localStorage.removeItem(LS_KEY); alert('Cleared local saved data.'); }
+
+    // ======== CSV DOWNLOAD ========
+    function downloadCSV(){
+      const header = ['Date','Opponent','Notes','Period','Time','Player','Role','Event','Assist'];
+      const rows = state.events.map(ev=>[
+        state.metadata.date,
+        state.metadata.opponent||'',
+        state.metadata.notes||'',
+        ev.period, ev.time, ev.player, ev.role, ev.type, ev.assist||''
+      ]);
+      const csv = [header].concat(rows).map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], {type:'text/csv'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `handball_stats_${state.metadata.date}.csv`;
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    }
+
+    // ======== SUBMIT TO GOOGLE SHEETS (Apps Script Web App) ========
+    async function submitToSheets(){
+      if(!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes('PASTE_WEB_APP_URL_HERE')){
+        alert('Please configure GOOGLE_SCRIPT_URL at the top of the file.');
+        return;
+      }
+      if(state.events.length === 0){ alert('No events to submit.'); return; }
+      const payload = {
+        metadata: {
+          date: state.metadata.date,
+          opponent: state.metadata.opponent||'',
+          notes: state.metadata.notes||'',
+          periodMinutes: state.metadata.periodMinutes,
+        },
+        players: state.players,
+        events: state.events,
+        gameId: `${state.metadata.date}_${Date.now()}`
+      };
+      try{
+        // Use application/x-www-form-urlencoded to avoid CORS preflight (Apps Script cannot handle OPTIONS)
+        const body = new URLSearchParams({ data: JSON.stringify(payload) }).toString();
+        const res = await fetch(GOOGLE_SCRIPT_URL, { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body });
+        if(!res.ok){ throw new Error('Network error'); }
+        let msg = 'Submitted to Google Sheet.';
+        try{ const j = await res.json(); if(j && j.status==='ok' && j.rowsAppended){ msg += ` Rows appended: ${j.rowsAppended}`; } }catch{}
+        alert(msg);
+        // After submit, keep a backup and clear current
+        localStorage.setItem(LS_KEY+"_backup", JSON.stringify({state}));
+        state.events = [];
+        renderEvents();
+        persistLocal();
+      } catch(err){
+        console.error(err);
+        alert('Submit failed. Please check your internet connection and the Apps Script URL.');
+      }
+    }
+
+    // Boot
+    init();
+  </script>
+</body>
+</html>
