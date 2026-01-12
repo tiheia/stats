@@ -6,21 +6,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Håndball – Enkel kampstatistikk</title>
   <style>
-    :root{
-      --bg:#0b1220; --panel:#121a2b; --accent:#4cc9f0; --accent2:#c77dff;
-      --text:#e6f1ff; --muted:#9fb3c8; --bad:#ef476f; --ok:#06d6a0; --warn:#ffd166;
-    }
+    :root{ --bg:#0b1220; --panel:#121a2b; --accent:#4cc9f0; --text:#e6f1ff; --muted:#9fb3c8; --bad:#ef476f; --ok:#06d6a0; --warn:#ffd166; }
     *{box-sizing:border-box}
     body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif}
-    header{padding:12px 16px;background:linear-gradient(90deg,var(--panel),#0f1a33)}
-    h1{margin:0;font-size:20px}
+    header{padding:12px 16px;background:linear-gradient(90deg,var(--panel),#0f1a33);display:flex;align-items:center;gap:12px}
+    h1{margin:0;font-size:20px;flex:1}
+    .togglebox{display:flex;align-items:center;gap:8px;color:#9fb3c8;font-size:12px}
     main{padding:16px;max-width:1100px;margin:auto}
     .grid{display:grid;gap:12px}
     @media(min-width:860px){.grid-2{grid-template-columns:1fr 1fr}}
     .card{background:var(--panel);border:1px solid #1f2a44;border-radius:12px;padding:12px}
     label{display:block;margin:8px 0 6px;color:var(--muted);font-size:13px}
     input[type="text"],input[type="number"],select{width:100%;padding:10px 12px;border-radius:8px;border:1px solid #2a3a5c;background:#0f1730;color:var(--text)}
-    .btn{appearance:none;border:1px solid #244; background:#0f1730; color:#e6f1ff; padding:10px 12px; border-radius:10px; cursor:pointer}
+    .btn{appearance:none;border:1px solid #244; background:#0f1730; color:#e6f1ff; padding:12px 14px; border-radius:10px; cursor:pointer}
     .btn.primary{background:linear-gradient(180deg,var(--accent),#2895be); border-color:#1d6b87; color:#062231; font-weight:700}
     .btn.success{background:linear-gradient(180deg,var(--ok),#0ab77f); border-color:#0a8f66; color:#062231; font-weight:700}
     .btn.warn{background:linear-gradient(180deg,var(--warn),#e3b23b); border-color:#b9902f; color:#3d2b00; font-weight:700}
@@ -28,19 +26,24 @@
     .btn.ghost{background:transparent;border-color:#2a3a5c}
     .row{display:flex;gap:8px;flex-wrap:wrap}
     .timer{font-variant-numeric:tabular-nums;font-size:40px;font-weight:800;letter-spacing:1px}
-    .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:#0b1430;border:1px solid #2a3a5c;color:var(--muted);font-size:12px}
-    .player-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+    .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:#0b1430;border:1px solid #2a3a5c;color:#9fb3c8;font-size:12px}
+
+    /* Player cards */
+    .player-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
     .player{padding:12px;border:1px solid #1f2a44;border-radius:12px;background:#0e1833}
-    .player h4{margin:0 0 8px 0}
-    .player .role{font-size:12px;color:var(--muted)}
-    .actions{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px}
+    .player h4{margin:0 0 6px 0}
+    .player .role{font-size:12px;color:#9fb3c8}
+    .actions{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
     .actions .wide{grid-column:1/-1}
+    .actions .btn{padding:16px 12px;font-size:15px}
+    @media(max-width:560px){.actions{grid-template-columns:1fr 1fr}.actions .btn{padding:18px 14px;font-size:16px}}
+
     table{width:100%;border-collapse:collapse;font-size:14px}
     th,td{padding:8px;border-bottom:1px solid #22324f}
     tr:hover{background:#0f1a35}
     .kpi{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
     .kpi .k{background:#0e1833;border:1px solid #1f2a44;border-radius:12px;padding:10px}
-    .muted{color:var(--muted)}
+    .muted{color:#9fb3c8}
     .small{font-size:12px}
     .sticky-footer{position:sticky;bottom:0;left:0;right:0;background:linear-gradient(180deg,rgba(11,18,32,0),var(--bg) 25%);padding:12px 0;margin-top:8px}
 
@@ -49,50 +52,45 @@
     .toast.show{display:block;animation:fadein .2s ease-out}
     @keyframes fadein{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}
 
-    /* Modaler */
+    /* Modals */
     .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.5);z-index:1000}
     .modal .content{width:min(700px,92vw);background:var(--panel);border:1px solid #1f2a44;border-radius:12px;padding:12px}
     .modal .list{max-height:42vh;overflow:auto}
-    .section-title{margin:8px 0 6px;color:var(--muted);font-size:13px}
+    .section-title{margin:8px 0 6px;color:#9fb3c8;font-size:13px}
 
-    /* Sone-SVG */
+    /* Zones – clickable numbers */
     .zone-wrap{width:100%;}
     svg.zone{width:100%;height:auto;border-radius:12px;background:#7bb7da}
-    .zone .court{fill:#76b6d8; pointer-events:none}
-    .zone .six{fill:#0b4a78; pointer-events:none}
-    .zone .goal{fill:#073656; pointer-events:none}
-    .zone .nine{fill:none;stroke:#fff;stroke-dasharray:8 6;opacity:.8; pointer-events:none}
-    .zone .redline{fill:none;stroke:#b11c4a;stroke-width:3; pointer-events:none}
-    .zone .diag{stroke:#b11c4a;stroke-width:3; pointer-events:none}
-    .zone .num{font-size:20px;fill:#fff;font-weight:700;text-anchor:middle; pointer-events:none}
-    .zone .hit{fill:rgba(76,201,240,0);cursor:pointer}
-    .zone .hit:hover{fill:rgba(76,201,240,.15)}
-    .zone .hit.active{fill:rgba(76,201,240,.35);stroke:var(--accent);stroke-width:2}
+    .zone .goal{fill:#0d4166}
+    .zone .nine{fill:none;stroke:#ffffff;stroke-dasharray:8 6;opacity:.9}
+    .zone .six{fill:none;stroke:#b11c4a;stroke-width:3}
+    .numbtn circle{fill:rgba(0,0,0,0);stroke:rgba(0,0,0,0)}
+    .numbtn:hover circle{fill:rgba(76,201,240,.12)}
+    .numbtn.selected circle{fill:rgba(76,201,240,.55);stroke:var(--accent);stroke-width:2.5}
+    .numbtn text{font-size:20px;fill:#fff;font-weight:800;text-anchor:middle;dominant-baseline:middle}
 
-    /* Pauseoppsummering */
-    .summary-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:6px}
-    .summary-item{background:#0e1833;border:1px solid #1f2a44;border-radius:10px;padding:8px;text-align:center}
-    .summary-item .zone{font-size:12px;color:#9fb3c8}
-    .summary-item .val{font-size:18px;font-weight:800}
-
-    /* Mobilvennlig tropp */
-    .roster-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
-    .badge{padding:10px;border:1px solid #1f2a44;border-radius:12px;background:#0e1833;cursor:pointer;display:flex;flex-direction:column;gap:6px}
+    /* Roster */
+    .roster-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px}
+    .list-title{color:#9fb3c8;font-size:12px;margin:6px 0 4px}
+    .badge{padding:10px;border:1px solid #1f2a44;border-radius:12px;background:#0e1833;cursor:grab;display:flex;flex-direction:column;gap:6px}
+    .badge:active{cursor:grabbing}
     .badge.active{outline:2px solid var(--accent); box-shadow:0 0 0 3px rgba(76,201,240,.2)}
+    .badge .top{display:flex;align-items:center;justify-content:space-between}
     .badge .nm{font-weight:700}
     .badge .rl{font-size:12px;color:#9fb3c8}
-
-    /* Rediger modal */
-    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-    @media(max-width:560px){.form-grid{grid-template-columns:1fr}}
+    .star{color:#ffd166;cursor:pointer;font-size:18px;line-height:18px}
+    .star.off{color:#2a3a5c}
   </style>
 </head>
 <body>
   <header>
     <h1>Håndball – Enkel kampstatistikk</h1>
+    <div class="togglebox">
+      <label><input id="soundToggle" type="checkbox" checked> Lyd</label>
+      <label><input id="hapticToggle" type="checkbox" checked> Haptisk</label>
+    </div>
   </header>
   <main>
-    <!-- FØR KAMP -->
     <section id="setup" class="grid grid-2">
       <div class="card">
         <h2 style="margin-top:0">1) Kampdetaljer</h2>
@@ -116,9 +114,7 @@
             </label>
             <div class="small muted">Regional/Lokal: automatisk 25 min. Annet: valgfritt.</div>
           </div>
-          <div>
-            <span class="pill">To omganger</span>
-          </div>
+          <div><span class="pill">To omganger</span></div>
         </div>
         <div class="row" style="margin-top:8px">
           <button class="btn ghost" onclick="loadFromLocal()">Last inn sist lagret</button>
@@ -128,11 +124,16 @@
 
       <div class="card">
         <h2 style="margin-top:0">2) Velg spillere som deltar</h2>
-        <div class="row" style="margin-bottom:8px">
+        <div class="list-title">Målvakter (øverst)</div>
+        <div id="gkList" class="roster-list" ondragover="onDragOver(event)" ondrop="onDrop(event)"></div>
+        <div class="list-title">Utespillere</div>
+        <div id="fpList" class="roster-list" ondragover="onDragOver(event)" ondrop="onDrop(event)"></div>
+        <div id="rosterList" class="roster-list" style="display:none"></div>
+        <div class="row" style="margin-top:8px">
           <button class="btn success" onclick="markFieldPlayersAttending()">Marker alle utespillere</button>
           <button class="btn" onclick="selectNone()">Fjern deltakelse</button>
+          <button class="btn ghost" onclick="markAllAttending()">Marker alle</button>
         </div>
-        <div id="rosterList" class="roster-list"></div>
       </div>
 
       <div class="card" style="grid-column:1/-1">
@@ -144,7 +145,6 @@
       </div>
     </section>
 
-    <!-- UNDER KAMP -->
     <section id="ingame" style="display:none">
       <div class="grid grid-2">
         <div class="card">
@@ -152,7 +152,7 @@
             <div>
               <div class="pill">Omgang <span id="periodLabel">1</span> / 2</div>
               <div class="timer" id="clock">00:00</div>
-              <div class="small muted">Trykk Start/Stopp for å styre klokken. Hendelser tidsstemples.</div>
+              <div class="small muted">Start/Stopp styrer klokken. Hendelser tidsstemples.</div>
             </div>
             <div class="grid" style="gap:8px;min-width:220px">
               <button id="btnStart" class="btn success" onclick="toggleClock()">Start</button>
@@ -175,6 +175,9 @@
 
       <div class="card">
         <h3 style="margin-top:0">Hurtighandlinger</h3>
+        <div class="row" style="justify-content:flex-end;margin-bottom:8px">
+          <button class="btn ghost" onclick="repeatLast()">Gjenta forrige</button>
+        </div>
         <div id="players" class="player-list"></div>
       </div>
 
@@ -213,12 +216,12 @@
     </section>
   </main>
 
-  <!-- Mål (Utespiller): Sone → Assist (auto-lagring) -->
+  <!-- Goal Modal -->
   <div id="goalModal" class="modal" role="dialog" aria-modal="true" aria-label="Registrer mål">
     <div class="content">
       <h3 style="margin-top:0">Registrer mål</h3>
       <div id="goalWho" class="small muted" style="margin-bottom:8px"></div>
-      <div class="section-title">Sone (trykk på banen)</div>
+      <div class="section-title">Sone (trykk på et siffer)</div>
       <div id="goalZone" class="zone-wrap" style="margin-bottom:8px"></div>
       <div class="section-title">Assist – valgfritt</div>
       <div id="assistList" class="list"></div>
@@ -228,12 +231,12 @@
     </div>
   </div>
 
-  <!-- Baklengsmål (MV) -->
+  <!-- Concede Modal -->
   <div id="concedeModal" class="modal" role="dialog" aria-modal="true" aria-label="Registrer mål (imot)">
     <div class="content">
       <h3 style="margin-top:0">Registrer mål (imot)</h3>
       <div id="concedeWho" class="small muted" style="margin-bottom:8px"></div>
-      <div class="section-title">Sone (trykk på banen)</div>
+      <div class="section-title">Sone (trykk på et siffer)</div>
       <div id="concedeZone" class="zone-wrap"></div>
       <div class="row" style="justify-content:flex-end;margin-top:10px">
         <button class="btn" onclick="closeConcedeModal()">Lukk</button>
@@ -241,12 +244,12 @@
     </div>
   </div>
 
-  <!-- Redning (MV) -->
+  <!-- Save Modal -->
   <div id="saveModal" class="modal" role="dialog" aria-modal="true" aria-label="Registrer redning">
     <div class="content">
       <h3 style="margin-top:0">Registrer redning (sone)</h3>
       <div id="saveWho" class="small muted" style="margin-bottom:8px"></div>
-      <div class="section-title">Sone (trykk på banen)</div>
+      <div class="section-title">Sone (trykk på et siffer)</div>
       <div id="saveZone" class="zone-wrap"></div>
       <div class="row" style="justify-content:flex-end;margin-top:10px">
         <button class="btn" onclick="closeSaveModal()">Lukk</button>
@@ -254,31 +257,32 @@
     </div>
   </div>
 
-  <!-- Rediger hendelse -->
+  <!-- Edit Modal -->
   <div id="editModal" class="modal" role="dialog" aria-modal="true" aria-label="Rediger hendelse">
     <div class="content">
       <h3 style="margin-top:0">Rediger hendelse</h3>
-      <div class="form-grid">
-        <label>Omgang
+      <div class="row small muted">Endre omgang, tid, spiller, hendelse, assist og sone før innsending.</div>
+      <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:8px">
+        <label style="min-width:120px">Omgang
           <select id="editPeriod"></select>
         </label>
-        <label>Tid (mm:ss)
+        <label style="min-width:140px">Tid (mm:ss)
           <input type="text" id="editTime" placeholder="mm:ss" />
         </label>
-        <label>Spiller
+        <label style="min-width:180px">Spiller
           <select id="editPlayer"></select>
         </label>
-        <label>Rolle
+        <label style="min-width:140px">Rolle
           <input type="text" id="editRole" readonly />
         </label>
-        <label>Hendelse
+        <label style="min-width:180px">Hendelse
           <select id="editType"></select>
         </label>
-        <label>Assist (valgfritt)
+        <label style="min-width:180px">Assist (valgfritt)
           <select id="editAssist"></select>
         </label>
       </div>
-      <div class="section-title">Sone (trykk på banen)</div>
+      <div class="section-title">Sone (trykk på et siffer)</div>
       <div id="editZone" class="zone-wrap" style="margin-bottom:8px"></div>
       <div class="row" style="justify-content:flex-end;margin-top:10px">
         <button class="btn" onclick="closeEditModal()">Avbryt</button>
@@ -290,302 +294,209 @@
   <div id="toast" class="toast"></div>
 
   <script>
-    // ======== KONFIG ========
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxZW7x8lC4mxIy0ubb4f1HUvEd9Qw6IPOI9mmT33wAE7FcyzUKZurxxuR-_i3RgWeLS/exec";
+    const DEFAULT_ROSTER = [ { name:"Jacob", role:"Utespiller", star:false, attending:false },
+      { name:"Patrick F", role:"Målvakt", star:false, attending:false },
+      { name:"Jonas", role:"Utespiller", star:false, attending:false },
+      { name:"Mats", role:"Utespiller", star:false, attending:false },
+      { name:"Theodor", role:"Utespiller", star:false, attending:false },
+      { name:"Ulrik", role:"Målvakt", star:false, attending:false },
+      { name:"Loke", role:"Utespiller", star:false, attending:false },
+      { name:"Sebastian", role:"Utespiller", star:false, attending:false },
+      { name:"Mateo", role:"Utespiller", star:false, attending:false },
+      { name:"Markus", role:"Utespiller", star:false, attending:false },
+      { name:"Demyd", role:"Utespiller", star:false, attending:false },
+      { name:"Theo", role:"Målvakt", star:false, attending:false },
+      { name:"Stokka", role:"Utespiller", star:false, attending:false },
+      { name:"Fabian", role:"Utespiller", star:false, attending:false },
+      { name:"Nicolay", role:"Utespiller", star:false, attending:false },
+      { name:"Felix", role:"Utespiller", star:false, attending:false },
+      { name:"Ole", role:"Utespiller", star:false, attending:false },
+      { name:"Patrick W.", role:"Utespiller", star:false, attending:false },
+      { name:"Oskar", role:"Utespiller", star:false, attending:false },
+      { name:"Adrian A", role:"Utespiller", star:false, attending:false },
+      { name:"Adrian B", role:"Utespiller", star:false, attending:false } ];
+    const LS_KEY = 'handball_stats_no_v16';
 
-    const DEFAULT_ROSTER = [
-      { name:"Jacob", role:"Utespiller" },
-      { name:"Patrick F", role:"Målvakt" },
-      { name:"Jonas", role:"Utespiller" },
-      { name:"Mats", role:"Utespiller" },
-      { name:"Theodor", role:"Utespiller" },
-      { name:"Ulrik", role:"Målvakt" },
-      { name:"Loke", role:"Utespiller" },
-      { name:"Sebastian", role:"Utespiller" },
-      { name:"Mateo", role:"Utespiller" },
-      { name:"Markus", role:"Utespiller" },
-      { name:"Demyd", role:"Utespiller" },
-      { name:"Theo", role:"Målvakt" },
-      { name:"Stokka", role:"Utespiller" },
-      { name:"Fabian", role:"Utespiller" },
-      { name:"Nicolay", role:"Utespiller" },
-      { name:"Felix", role:"Utespiller" },
-      { name:"Ole", role:"Utespiller" },
-      { name:"Patrick W.", role:"Utespiller" },
-      { name:"Oskar", role:"Utespiller" },
-      { name:"Adrian A", role:"Utespiller" },
-      { name:"Adrian B", role:"Utespiller" }
-    ];
-
-    // ======== TILSTAND ========
     const state = {
       metadata: { date: new Date().toISOString().slice(0,10), opponent: "", notes: "", competition: 'Annet', periodMinutes: 30 },
-      players: [], // {name, role: 'Utespiller'|'Målvakt', attending: true|false}
-      attending: [],
+      players: [],
       currentPeriod: 1,
       clock: { running:false, startMs:0, elapsedMs:0 },
       periodStarted: {1:false, 2:false},
-      events: [], // {period, time, player, role, type, assist, zone}
+      events: [],
       goalForm: { player:"", zone:null, assist:"" },
       concedeForm: { player:"", zone:null },
       saveForm: { player:"", zone:null },
-      editIndex: -1,
-      editData: null,
+      lastZoneByPlayer: {},
+      orderGK: [],
+      orderFP: [],
+      soundOn: true,
+      hapticOn: true,
+      manualOrder: [],
     };
 
-    const LS_KEY = 'handball_stats_no_v10';
-
     function $(id){ return document.getElementById(id); }
-
     function showToast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2500); }
+    function vibrate(ms=20){ if(state.hapticOn && navigator.vibrate){ navigator.vibrate(ms); } }
+    function beep(hz=880, ms=90){ if(!state.soundOn) return; try{ const ctx = new (window.AudioContext||window.webkitAudioContext)(); const o=ctx.createOscillator(); const g=ctx.createGain(); o.type='sine'; o.frequency.value=hz; g.gain.value=0.06; o.connect(g); g.connect(ctx.destination); o.start(); setTimeout(()=>{o.stop(); ctx.close();}, ms); }catch{} }
+    function feedback(){ beep(880,90); vibrate(18); }
 
-    // ======== OPPSETT / TROPP ========
+    // ===== Setup =====
     function init(){
-      state.players = DEFAULT_ROSTER.map(p => ({ name:p.name, role:p.role, attending:false }));
+      state.players = DEFAULT_ROSTER.map(p=>({ name:p.name, role:p.role, star:!!p.star, attending:!!p.attending }));
+      // Default sort orders
+      state.orderGK = state.players.filter(p=>p.role==='Målvakt').map(p=>p.name).sort((a,b)=>a.localeCompare(b));
+      state.orderFP = state.players.filter(p=>p.role!=='Målvakt').map(p=>p.name).sort((a,b)=>a.localeCompare(b));
       renderRoster();
       restoreLocalIfAny();
+      ensureRosterRendered();
       onCompetitionChange();
-      console.log('Apps Script URL:', GOOGLE_SCRIPT_URL);
+      $('soundToggle').checked = state.soundOn; $('hapticToggle').checked = state.hapticOn;
+      $('soundToggle').addEventListener('change',()=>{ state.soundOn = $('soundToggle').checked; persistLocal(); });
+      $('hapticToggle').addEventListener('change',()=>{ state.hapticOn = $('hapticToggle').checked; persistLocal(); });
+    }
+
+    function ensureRosterRendered(){
+      // Safety: if setup roster containers have no children, repopulate from DEFAULT_ROSTER
+      const gkList = $('gkList'); const fpList = $('fpList');
+      const emptyGK = !gkList || gkList.children.length===0;
+      const emptyFP = !fpList || fpList.children.length===0;
+      if(emptyGK && emptyFP){
+        if(!state.players || state.players.length===0){
+          state.players = DEFAULT_ROSTER.map(p=>({ name:p.name, role:p.role, star:false, attending:false }));
+          state.orderGK = state.players.filter(p=>p.role==='Målvakt').map(p=>p.name).sort((a,b)=>a.localeCompare(b));
+          state.orderFP = state.players.filter(p=>p.role!=='Målvakt').map(p=>p.name).sort((a,b)=>a.localeCompare(b));
+        }
+        renderRoster();
+      }
+    }
+
+    function rosterSorted(){
+      const gk = state.orderGK.map(n=> state.players.find(p=>p.name===n)).filter(Boolean);
+      const fp = state.orderFP.map(n=> state.players.find(p=>p.name===n)).filter(Boolean);
+      const sortStar = arr => { const fav = arr.filter(p=>p.star).sort((a,b)=>a.name.localeCompare(b.name)); const rest = arr.filter(p=>!p.star).sort((a,b)=>a.name.localeCompare(b.name)); return fav.concat(rest); };
+      return { gk: sortStar(gk), fp: sortStar(fp) };
     }
 
     function renderRoster(){
-      const list = $('rosterList'); list.innerHTML = '';
-      state.players.forEach((p, idx) => {
-        const item = document.createElement('div'); item.className='badge' + (p.attending ? ' active' : '');
-        item.innerHTML = `
-          <div class="nm">${p.name}</div>
-          <div class="rl">${p.role}</div>
-        `;
+      const {gk, fp} = rosterSorted();
+      const gkList = $('gkList'); const fpList = $('fpList');
+      if(!gkList || !fpList){
+        // Fallback to single list container if present
+        const list = $('rosterList'); if(list){ list.style.display='grid'; list.innerHTML=''; gk.concat(fp).forEach(p=>{ const item=document.createElement('div'); item.className='badge'+(p.attending?' active':''); item.innerHTML=`<div class="top"><span class="nm">${p.name}</span><span class="star ${p.star?'':'off'}" onclick="toggleStar('${p.name}')">★</span></div><div class="rl">${p.role} • Trykk for å merke</div>`; item.onclick=()=>{ p.attending=!p.attending; renderRoster(); persistLocal(); }; list.appendChild(item); }); }
+        return;
+      }
+      gkList.innerHTML=''; fpList.innerHTML='';
+      const renderItem = (p, container) => {
+        const item = document.createElement('div'); item.className='badge' + (p.attending ? ' active' : ''); item.draggable=true; item.dataset.name=p.name; item.dataset.role=p.role;
+        item.innerHTML = `<div class="top"><span class="nm">${p.name}</span><span class="star ${p.star?'':'off'}" title="Favoritt" onclick="toggleStar('${p.name}')">★</span></div><div class="rl">${p.role} • Trykk for å merke</div>`;
         item.onclick = () => { p.attending = !p.attending; renderRoster(); persistLocal(); };
-        list.appendChild(item);
-      });
+        item.addEventListener('dragstart', onDragStart);
+        gkList===container || fpList===container; container.appendChild(item);
+      };
+      gk.forEach(p=> renderItem(p, gkList)); fp.forEach(p=> renderItem(p, fpList));
     }
+
+    function toggleStar(name){ const p = state.players.find(x=>x.name===name); if(!p) return; p.star = !p.star; renderRoster(); persistLocal(); renderPlayers(); }
+    let dragName=null, dragRole=null, dragOverContainer=null;
+    function onDragStart(e){ dragName = e.currentTarget.dataset.name; dragRole = e.currentTarget.dataset.role; e.dataTransfer.effectAllowed='move'; }
+    function onDragOver(e){ e.preventDefault(); dragOverContainer = e.currentTarget; e.dataTransfer.dropEffect='move'; }
+    function onDrop(e){ e.preventDefault(); if(!dragName||!dragOverContainer) return; const role = dragOverContainer.id==='gkList'?'Målvakt':'Utespiller'; if(role!==dragRole){ showToast('Kan ikke flytte mellom GK og utespillere.'); return; } const names = Array.from(dragOverContainer.querySelectorAll('.badge')).map(el=> el.dataset.name); if(role==='Målvakt') state.orderGK=names; else state.orderFP=names; renderRoster(); persistLocal(); }
 
     function markFieldPlayersAttending(){ state.players.forEach(p=>{ if(p.role==='Utespiller') p.attending=true; }); renderRoster(); persistLocal(); }
+    function markAllAttending(){ state.players.forEach(p=> p.attending=true ); renderRoster(); persistLocal(); }
     function selectNone(){ state.players.forEach(p=> p.attending=false ); renderRoster(); persistLocal(); }
 
-    // ======== KONKURRANSE / PERIODELENGDE ========
-    function onCompetitionChange(){
-      const compSel = $('competition'); const comp = compSel.value; state.metadata.competition = comp;
-      const minutesInput = $('periodMinutes');
-      if(comp === 'Regional' || comp === 'Lokal'){
-        state.metadata.periodMinutes = 25; minutesInput.value = 25; minutesInput.disabled = true;
-      } else { minutesInput.disabled = false; }
-      persistLocal();
-    }
+    function onCompetitionChange(){ const compSel=$('competition'); const comp=compSel.value; state.metadata.competition=comp; const minutesInput=$('periodMinutes'); if(comp==='Regional'||comp==='Lokal'){ state.metadata.periodMinutes=25; minutesInput.value=25; minutesInput.disabled=true; } else { minutesInput.disabled=false; } persistLocal(); }
 
-    // ======== KAMPFLYT ========
-    function startGame(){
-      state.metadata.opponent = $('opponent').value.trim();
-      state.metadata.notes = $('notes').value.trim();
-      state.metadata.periodMinutes = Math.max(1, parseInt($('periodMinutes').value || String(state.metadata.periodMinutes), 10));
-      state.attending = state.players.filter(p=>p.attending).map(p=>p.name);
-      if(state.attending.length === 0){ alert('Velg minst én spiller som deltar.'); return; }
-      $('setup').style.display='none'; $('ingame').style.display='block';
-      state.currentPeriod = 1; state.clock = {running:false,startMs:0,elapsedMs:0}; state.periodStarted = {1:false,2:false};
-      $('periodLabel').textContent = '1'; updateClockUI(); renderPlayers(); renderEvents(); persistLocal();
-    }
+    function startGame(){ state.metadata.opponent=$('opponent').value.trim(); state.metadata.notes=$('notes').value.trim(); state.metadata.periodMinutes=Math.max(1,parseInt($('periodMinutes').value||String(state.metadata.periodMinutes),10)); const attendingNames = state.players.filter(p=>p.attending).map(p=>p.name); if(attendingNames.length===0){ state.players.forEach(p=> p.attending=true); renderRoster(); }
+      $('setup').style.display='none'; $('ingame').style.display='block'; state.currentPeriod=1; state.clock={running:false,startMs:0,elapsedMs:0}; state.periodStarted={1:false,2:false}; $('periodLabel').textContent='1'; updateClockUI(); renderPlayers(); renderEvents(); persistLocal(); }
 
-    function goBackToSetup(){ $('ingame').style.display='none'; $('setup').style.display='grid'; persistLocal(); }
+    function goBackToSetup(){ $('ingame').style.display='none'; $('setup').style.display='grid'; ensureRosterRendered(); persistLocal(); }
 
-    function fullReset(){
-      // Reset all state and UI to initial
-      state.metadata = { date: new Date().toISOString().slice(0,10), opponent: "", notes: "", competition: 'Annet', periodMinutes: 30 };
-      state.players = DEFAULT_ROSTER.map(p => ({ name:p.name, role:p.role, attending:false }));
-      state.attending = [];
-      state.currentPeriod = 1;
-      state.clock = { running:false, startMs:0, elapsedMs:0 };
-      state.periodStarted = {1:false,2:false};
-      state.events = [];
-      $('competition').value = 'Annet';
-      $('opponent').value = '';
-      $('notes').value = '';
-      $('periodMinutes').value = 30; $('periodMinutes').disabled = false;
-      renderRoster(); renderPlayers(); renderEvents(); updateClockUI();
-      $('ingame').style.display='none'; $('setup').style.display='grid';
-      localStorage.removeItem(LS_KEY);
-      persistLocal();
-    }
-
-    // ======== KLOKKE ========
-    let _tickHandle = null;
-    function toggleClock(){
-      if(state.clock.running){
-        state.clock.running=false; clearInterval(_tickHandle); _tickHandle=null;
-        $('btnStart').textContent='Start'; $('btnStart').classList.add('success');
-      } else {
-        state.clock.running=true; state.clock.startMs = Date.now() - state.clock.elapsedMs; _tickHandle = setInterval(tick, 250);
-        $('btnStart').textContent='Stopp'; $('btnStart').classList.remove('success');
-        state.periodStarted[state.currentPeriod] = true;
-      }
-      persistLocal();
-    }
-    function tick(){ const periodMs = state.metadata.periodMinutes * 60 * 1000; state.clock.elapsedMs = Math.min(periodMs, Date.now() - state.clock.startMs); updateClockUI(); if(state.clock.elapsedMs >= periodMs){ endPeriod(); } }
+    let _tickHandle=null; function toggleClock(){ if(state.clock.running){ state.clock.running=false; clearInterval(_tickHandle); _tickHandle=null; } else { state.clock.running=true; state.clock.startMs=Date.now()-state.clock.elapsedMs; _tickHandle=setInterval(tick,250); state.periodStarted[state.currentPeriod]=true; } persistLocal(); }
+    function tick(){ const periodMs=state.metadata.periodMinutes*60*1000; state.clock.elapsedMs=Math.min(periodMs, Date.now()-state.clock.startMs); updateClockUI(); if(state.clock.elapsedMs>=periodMs){ endPeriod(); } }
     function updateClockUI(){ $('clock').textContent = millisToClock(state.clock.elapsedMs); }
     function millisToClock(ms){ const t=Math.floor(ms/1000), mm=String(Math.floor(t/60)).padStart(2,'0'), ss=String(t%60).padStart(2,'0'); return `${mm}:${ss}`; }
     function nowClock(){ return millisToClock(state.clock.elapsedMs); }
-
     function ensurePeriodStarted(){ if(!state.periodStarted[state.currentPeriod]){ alert('Start klokken i denne omgangen før du registrerer hendelser.'); return false; } return true; }
+    function endPeriod(){ if(state.currentPeriod===1){ state.currentPeriod=2; $('periodLabel').textContent='2'; state.clock={running:false,startMs:0,elapsedMs:0}; clearInterval(_tickHandle); _tickHandle=null; openHalftimeModal(); } else { state.clock.running=false; clearInterval(_tickHandle); _tickHandle=null; updateClockUI(); alert('2. omgang er slutt. Du kan fortsatt se/oppsummere og sende inn kampen.'); } persistLocal(); }
 
-    function endPeriod(){
-      if(state.currentPeriod === 1){
-        state.currentPeriod = 2; $('periodLabel').textContent = '2';
-        state.clock = {running:false,startMs:0,elapsedMs:0}; clearInterval(_tickHandle); _tickHandle=null;
-        $('btnStart').textContent='Start'; $('btnStart').classList.add('success');
-        openHalftimeModal();
-      } else {
-        state.clock.running=false; clearInterval(_tickHandle); _tickHandle=null; updateClockUI();
-        alert('2. omgang er slutt. Du kan fortsatt se/oppsummere og sende inn kampen.');
-      }
-      persistLocal();
-    }
+    function sortedAttending(){ const all = state.players.filter(p=>p.attending); const fav = all.filter(p=>p.star).sort((a,b)=>a.name.localeCompare(b.name)); const gk = all.filter(p=>!p.star && p.role==='Målvakt').sort((a,b)=>a.name.localeCompare(b.name)); const fp = all.filter(p=>!p.star && p.role!=='Målvakt').sort((a,b)=>a.name.localeCompare(b.name)); return fav.concat(gk, fp); }
 
-    // ======== SPILLERE & HANDLINGER ========
-    function renderPlayers(){
-      const container = $('players'); container.innerHTML = '';
-      const attending = state.players.filter(p=>p.attending);
-      attending.forEach(p => {
-        const div = document.createElement('div'); div.className='player';
-        div.innerHTML = `
-          <h4>${p.name}</h4>
-          <div class="role">${p.role}</div>
-          <div class="actions">${actionsHtml(p)}</div>
-        `; container.appendChild(div);
-      });
-    }
+    function renderPlayers(){ const container=$('players'); if(!container) return; container.innerHTML=''; const attending=sortedAttending(); attending.forEach(p=>{ const div=document.createElement('div'); div.className='player'; let actions=''; if(p.role==='Målvakt'){ actions = `<button class=\"btn success\" onclick=\"if(ensurePeriodStarted()) openSaveModal('${p.name}')\">Redning</button><button class=\"btn danger\" onclick=\"if(ensurePeriodStarted()) openConcedeModal('${p.name}')\">Mål</button><button class=\"btn ghost\" onclick=\"toggleStar('${p.name}')\">${p.star?'★ Favoritt':'☆ Favoritt'}</button>`; } else { actions = `<button class=\"btn success\" onclick=\"if(ensurePeriodStarted()) openGoalModal('${p.name}')\">Mål</button><button class=\"btn warn\" onclick=\"if(ensurePeriodStarted()) addEvent('${p.name}','Utespiller','Bom')\">Bom</button><button class=\"btn danger\" onclick=\"if(ensurePeriodStarted()) addEvent('${p.name}','Utespiller','Teknisk')\">Teknisk</button>`; } div.innerHTML = `<h4>${p.name}</h4><div class=\"role\">${p.role}</div><div class=\"actions\">${actions}</div>`; container.appendChild(div); }); }
 
-    function actionsHtml(p){
-      if(p.role === 'Målvakt'){
-        return `
-          <button class="btn success wide" onclick="if(ensurePeriodStarted()) openSaveModal('${p.name}')">Redning</button>
-          <button class="btn danger wide" onclick="if(ensurePeriodStarted()) openConcedeModal('${p.name}')">Mål</button>
-        `;
-      }
-      return `
-        <button class="btn success" onclick="if(ensurePeriodStarted()) openGoalModal('${p.name}')">Mål</button>
-        <button class="btn warn" onclick="if(ensurePeriodStarted()) addEvent('${p.name}','Utespiller','Bom')">Bom</button>
-        <button class="btn danger" onclick="if(ensurePeriodStarted()) addEvent('${p.name}','Utespiller','Teknisk')">Teknisk</button>
-      `;
-    }
-
-    // ======== HENDELSER ========
-    function addEvent(player, role, type, assist='', zone=''){
-      const ev = { period: state.currentPeriod, time: nowClock(), player, role, type, assist, zone };
-      state.events.push(ev); renderEvents(); persistLocal();
-    }
-    function renderEvents(){ const body = $('eventsBody'); body.innerHTML=''; state.events.forEach((ev, i) => { const tr = document.createElement('tr'); tr.innerHTML = `
-          <td class="small muted">${i+1}</td>
-          <td>${ev.period}</td>
-          <td>${ev.time}</td>
-          <td>${ev.player}</td>
-          <td class="small muted">${ev.role}</td>
-          <td>${ev.type}</td>
-          <td>${ev.assist||''}</td>
-          <td>${ev.zone||''}</td>
-          <td>
-            <button class="btn ghost" onclick="openEdit(${i})">Rediger</button>
-            <button class="btn ghost" onclick="deleteEvent(${i})">Slett</button>
-          </td>
-        `; body.appendChild(tr); }); updateKPIs(); }
-    function updateKPIs(){ const goals = state.events.filter(e=>e.type==='Mål' && e.role==='Utespiller').length; const assists = state.events.filter(e=>e.assist).length; const miss = state.events.filter(e=>e.type==='Bom').length; const saves = state.events.filter(e=>e.type==='Redning').length; const conceded = state.events.filter(e=>e.type==='Baklengsmål' || (e.type==='Mål' && e.role==='Målvakt')).length; $('kpiGoals').textContent = goals; $('kpiAssists').textContent = assists; $('kpiMiss').textContent = miss; $('kpiSaves').textContent = saves; $('kpiConceded').textContent = conceded; $('kpiEvents').textContent = state.events.length; }
+    function addEvent(player, role, type, assist='', zone=''){ const ev={ period: state.currentPeriod, time: nowClock(), player, role, type, assist, zone }; state.events.push(ev); renderEvents(); persistLocal(); feedback(); }
+    function renderEvents(){ const body=$('eventsBody'); body.innerHTML=''; state.events.forEach((ev,i)=>{ const tr=document.createElement('tr'); tr.innerHTML = `<td class=\"small muted\">${i+1}</td><td>${ev.period}</td><td>${ev.time}</td><td>${ev.player}</td><td class=\"small muted\">${ev.role}</td><td>${ev.type}</td><td>${ev.assist||''}</td><td>${ev.zone||''}</td><td><button class=\"btn ghost\" onclick=\"openEdit(${i})\">Rediger</button> <button class=\"btn ghost\" onclick=\"deleteEvent(${i})\">Slett</button></td>`; body.appendChild(tr); }); updateKPIs(); }
+    function updateKPIs(){ const goals = state.events.filter(e=>e.type==='Mål' && e.role==='Utespiller').length; const assists = state.events.filter(e=>e.assist).length; const miss = state.events.filter(e=>e.type==='Bom').length; const saves = state.events.filter(e=>e.type==='Redning').length; const conceded = state.events.filter(e=>e.type==='Baklengsmål' || (e.type==='Mål' && e.role==='Målvakt')).length; $('kpiGoals').textContent=goals; $('kpiAssists').textContent=assists; $('kpiMiss').textContent=miss; $('kpiSaves').textContent=saves; $('kpiConceded').textContent=conceded; $('kpiEvents').textContent=state.events.length; }
     function undoLast(){ state.events.pop(); renderEvents(); persistLocal(); }
     function deleteEvent(i){ if(!confirm('Slette denne hendelsen?')) return; state.events.splice(i,1); renderEvents(); persistLocal(); }
+    function repeatLast(){ if(state.events.length===0) return; const last=state.events[state.events.length-1]; addEvent(last.player,last.role,last.type,last.assist||'',last.zone||''); }
 
-    // ======== SONEPICKER (SVG) ========
-    function zoneSVG(selected){
-      const isSel = (z) => (selected == z ? ' active' : '');
+    // ===== Zones: CLICKABLE NUMBERS =====
+    function zoneSVG_numbers(selected){
+      const sel = (z)=> (selected==z ? ' selected' : '');
       return `
-      <svg class="zone" viewBox="0 0 554 327" xmlns="http://www.w3.org/2000/svg" aria-label="Skuddsoner">
-        <rect class="court" x="0" y="0" width="554" height="327" rx="12"/>
-        <path class="goal" d="M140,0 H414 V60 A277,277 0 0 1 140,60 Z"/>
-        <path class="six" d="M170,0 H384 V80 A235,235 0 0 1 170,80 Z"/>
-        <path class="redline" d="M200,120 Q277,100 354,120"/>
-        <path class="nine" d="M120,0 H434 V130 A277,277 0 0 1 120,130 Z"/>
-        <line class="diag" x1="277" y1="10" x2="35" y2="220"/>
-        <line class="diag" x1="277" y1="10" x2="165" y2="260"/>
-        <line class="diag" x1="277" y1="10" x2="389" y2="260"/>
-        <line class="diag" x1="277" y1="10" x2="520" y2="220"/>
-        <text class="num" x="65" y="100">1</text>
-        <text class="num" x="205" y="120">2</text>
-        <text class="num" x="277" y="140">3</text>
-        <text class="num" x="349" y="120">4</text>
-        <text class="num" x="489" y="100">5</text>
-        <text class="num" x="140" y="220">6</text>
-        <text class="num" x="277" y="250">7</text>
-        <text class="num" x="414" y="220">8</text>
-        <circle class="hit${isSel(1)}" data-zone="1" cx="65" cy="100" r="34"/>
-        <circle class="hit${isSel(2)}" data-zone="2" cx="205" cy="120" r="34"/>
-        <circle class="hit${isSel(3)}" data-zone="3" cx="277" cy="140" r="34"/>
-        <circle class="hit${isSel(4)}" data-zone="4" cx="349" cy="120" r="34"/>
-        <circle class="hit${isSel(5)}" data-zone="5" cx="489" cy="100" r="34"/>
-        <circle class="hit${isSel(6)}" data-zone="6" cx="140" cy="220" r="38"/>
-        <circle class="hit${isSel(7)}" data-zone="7" cx="277" cy="250" r="38"/>
-        <circle class="hit${isSel(8)}" data-zone="8" cx="414" cy="220" r="38"/>
+      <svg class="zone" viewBox="0 0 566 337" xmlns="http://www.w3.org/2000/svg" aria-label="Skuddsoner">
+        <rect x="0" y="0" width="566" height="337" rx="12" fill="#7bb7da"/>
+        <path class="goal" d="M120,0 H446 V90 C446,90 360,160 283,160 206,160 120,90 120,90 Z"/>
+        <path class="six" d="M210,170 Q283,155 356,170"/>
+        <path class="nine" d="M70,120 A350,350 0 0 0 496,120"/>
+        <!-- Number buttons -->
+        ${numBtn(1, 50,110, sel(1))}
+        ${numBtn(2, 220,140, sel(2))}
+        ${numBtn(3, 283,150, sel(3))}
+        ${numBtn(4, 346,140, sel(4))}
+        ${numBtn(5, 516,110, sel(5))}
+        ${numBtn(6, 140,240, sel(6))}
+        ${numBtn(7, 283,265, sel(7))}
+        ${numBtn(8, 426,240, sel(8))}
       </svg>`;
     }
 
-    function renderZonePicker(targetId, selected, onSelect){
-      const tgt = $(targetId); tgt.innerHTML = zoneSVG(selected);
-      tgt.querySelectorAll('[data-zone]').forEach(el=>{ el.addEventListener('click', () => { const z=parseInt(el.dataset.zone,10); onSelect(z); updateZoneActive(targetId,z); }); });
+    function numBtn(n, x, y, selectedClass){
+      return `<g class=\"numbtn${selectedClass}\" data-zone=\"${n}\"><circle cx=\"${x}\" cy=\"${y}\" r=\"20\"></circle><text x=\"${x}\" y=\"${y}\">${n}</text></g>`;
     }
-    function updateZoneActive(targetId, selected){ const tgt=$(targetId); if(!tgt) return; tgt.querySelectorAll('.hit').forEach(h=>{ if(parseInt(h.dataset.zone,10)===selected) h.classList.add('active'); else h.classList.remove('active'); }); }
 
-    // ======== MÅL (Utespiller): SONE → ASSIST ========
-    function openGoalModal(player){ state.goalForm = { player, zone:null, assist:"" }; $('goalWho').textContent = `${player} – Utespiller`; renderZonePicker('goalZone', null, (z)=>{ state.goalForm.zone=z; renderAssistList(); }); renderAssistList(); $('goalModal').style.display='flex'; }
-    function renderAssistList(){ const list = $('assistList'); list.innerHTML = ''; const scorer = state.goalForm.player; const attending = state.players.filter(p=>p.attending && p.name!==scorer); const noneBtn = document.createElement('button'); noneBtn.className='btn ghost'; noneBtn.textContent = 'Ingen assist'; noneBtn.style.margin='0 0 8px 0'; noneBtn.onclick = () => { state.goalForm.assist=''; confirmGoal(); }; if(!state.goalForm.zone){ noneBtn.disabled = true; } list.appendChild(noneBtn); attending.forEach(p=>{ const b = document.createElement('button'); b.className='btn'; b.style.display='block'; b.style.width='100%'; b.style.margin='4px 0'; b.textContent = p.name; b.onclick = () => { state.goalForm.assist=p.name; confirmGoal(); }; if(!state.goalForm.zone){ b.disabled = true; } list.appendChild(b); }); }
+    function renderZonePicker(targetId, selected, onSelect){ const tgt=$(targetId); tgt.innerHTML=zoneSVG_numbers(selected); tgt.querySelectorAll('[data-zone]').forEach(el=>{ el.addEventListener('click', ()=>{ const z=parseInt(el.dataset.zone,10); onSelect(z); tgt.querySelectorAll('.numbtn').forEach(a=>a.classList.remove('selected')); el.classList.add('selected'); feedback(); }); }); }
+
+    // Goal flow
+    function openGoalModal(player){ state.goalForm = { player, zone: state.lastZoneByPlayer[player] || null, assist:"" }; $('goalWho').textContent = `${player} – Utespiller`; renderZonePicker('goalZone', state.goalForm.zone, (z)=>{ state.goalForm.zone=z; renderAssistList(); }); renderAssistList(); $('goalModal').style.display='flex'; }
+    function renderAssistList(){ const list=$('assistList'); list.innerHTML=''; const scorer=state.goalForm.player; const attending=state.players.filter(p=>p.attending && p.name!==scorer); const noneBtn=document.createElement('button'); noneBtn.className='btn ghost'; noneBtn.textContent='Ingen assist'; noneBtn.style.margin='0 0 8px 0'; noneBtn.onclick=()=>{ state.goalForm.assist=''; confirmGoal(); }; if(!state.goalForm.zone){ noneBtn.disabled=true; } list.appendChild(noneBtn); attending.forEach(p=>{ const b=document.createElement('button'); b.className='btn'; b.style.display='block'; b.style.width='100%'; b.style.margin='4px 0'; b.textContent=p.name; b.onclick=()=>{ state.goalForm.assist=p.name; confirmGoal(); }; if(!state.goalForm.zone){ b.disabled=true; } list.appendChild(b); }); }
     function closeGoalModal(){ $('goalModal').style.display='none'; }
-    function confirmGoal(){ const g = state.goalForm; addEvent(g.player,'Utespiller','Mål',g.assist||'',String(g.zone||'')); closeGoalModal(); }
+    function confirmGoal(){ const g=state.goalForm; addEvent(g.player,'Utespiller','Mål',g.assist||'',String(g.zone||'')); state.lastZoneByPlayer[g.player]=g.zone; closeGoalModal(); }
 
-    // ======== MÅL (imot) – Målvakt ========
-    function openConcedeModal(player){ state.concedeForm = { player, zone:null }; $('concedeWho').textContent = `${player} – Målvakt`; renderZonePicker('concedeZone', null, (z)=>{ state.concedeForm.zone=z; confirmConcede(); }); $('concedeModal').style.display='flex'; }
+    // Concede (GK)
+    function openConcedeModal(player){ state.concedeForm = { player, zone: state.lastZoneByPlayer[player] || null }; $('concedeWho').textContent = `${player} – Målvakt`; renderZonePicker('concedeZone', state.concedeForm.zone, (z)=>{ state.concedeForm.zone=z; confirmConcede(); }); $('concedeModal').style.display='flex'; }
     function closeConcedeModal(){ $('concedeModal').style.display='none'; }
-    function confirmConcede(){ const c = state.concedeForm; addEvent(c.player,'Målvakt','Baklengsmål','',String(c.zone||'')); closeConcedeModal(); }
+    function confirmConcede(){ const c=state.concedeForm; addEvent(c.player,'Målvakt','Baklengsmål','',String(c.zone||'')); state.lastZoneByPlayer[c.player]=c.zone; closeConcedeModal(); }
 
-    // ======== REDNING – Målvakt ========
-    function openSaveModal(player){ state.saveForm = { player, zone:null }; $('saveWho').textContent = `${player} – Målvakt`; renderZonePicker('saveZone', null, (z)=>{ state.saveForm.zone=z; confirmSave(); }); $('saveModal').style.display='flex'; }
+    // Save (GK)
+    function openSaveModal(player){ state.saveForm = { player, zone: state.lastZoneByPlayer[player] || null }; $('saveWho').textContent = `${player} – Målvakt`; renderZonePicker('saveZone', state.saveForm.zone, (z)=>{ state.saveForm.zone=z; confirmSave(); }); $('saveModal').style.display='flex'; }
     function closeSaveModal(){ $('saveModal').style.display='none'; }
-    function confirmSave(){ const s = state.saveForm; addEvent(s.player,'Målvakt','Redning','',String(s.zone||'')); closeSaveModal(); }
+    function confirmSave(){ const s=state.saveForm; addEvent(s.player,'Målvakt','Redning','',String(s.zone||'')); state.lastZoneByPlayer[s.player]=s.zone; closeSaveModal(); }
 
-    // ======== PAUSEOPPSUMMERING ========
-    function openHalftimeModal(){ const grid = $('halftimeGrid'); grid.innerHTML=''; const our = Array(9).fill(0); const opp = Array(9).fill(0); state.events.filter(e=>e.period===1).forEach(e=>{ const z = parseInt(e.zone||'0',10); if(!z||z<1||z>8) return; if(e.type==='Mål' && e.role==='Utespiller') our[z]++; if(e.type==='Baklengsmål') opp[z]++; }); for(let z=1; z<=8; z++){ const d = document.createElement('div'); d.className='summary-item'; d.innerHTML = `<div class="zone">Sone ${z}</div><div class="val">Våre: ${our[z]}<br/>Baklengs: ${opp[z]}</div>`; grid.appendChild(d);} $('halftimeModal').style.display='flex'; }
-    function closeHalftimeModal(){ $('halftimeModal').style.display='none'; }
+    // Edit
+    function openEdit(i){ const ev={...state.events[i]}; const pSel=$('editPeriod'); pSel.innerHTML=''; [1,2].forEach(n=>{ const o=document.createElement('option'); o.value=String(n); o.textContent=String(n); if(n===ev.period) o.selected=true; pSel.appendChild(o); }); $('editTime').value=ev.time; const plSel=$('editPlayer'); plSel.innerHTML=''; state.players.forEach(p=>{ const o=document.createElement('option'); o.value=p.name; o.textContent=p.name; if(p.name===ev.player) o.selected=true; plSel.appendChild(o); }); const role=(state.players.find(p=>p.name===plSel.value)||{role:ev.role}).role; $('editRole').value=role; const typeSel=$('editType'); typeSel.innerHTML=''; (role==='Målvakt'?['Redning','Baklengsmål']:['Mål','Bom','Teknisk']).forEach(t=>{ const o=document.createElement('option'); o.value=t; o.textContent=t; if(t===ev.type) o.selected=true; typeSel.appendChild(o); }); const aSel=$('editAssist'); aSel.innerHTML=''; const none=document.createElement('option'); none.value=''; none.textContent='(ingen)'; aSel.appendChild(none); state.players.filter(p=>p.attending && p.name!==plSel.value).forEach(p=>{ const o=document.createElement('option'); o.value=p.name; o.textContent=p.name; if(p.name===ev.assist) o.selected=true; aSel.appendChild(o); }); renderZonePicker('editZone', parseInt(ev.zone||'0',10)||null, (z)=>{ ev.zone=String(z); }); $('editModal').style.display='flex'; state.editSave=function(){ state.events[i]=ev; closeEditModal(); renderEvents(); persistLocal(); } }
+    function closeEditModal(){ $('editModal').style.display='none'; state.editSave=null; }
+    function saveEditedEvent(){ if(typeof state.editSave==='function') state.editSave(); }
 
-    // ======== REDIGER HENDELSE ========
-    function openEdit(i){ state.editIndex = i; const ev = {...state.events[i]}; state.editData = ev; // build form
-      const pSel = $('editPeriod'); pSel.innerHTML=''; [1,2].forEach(n=>{ const o=document.createElement('option'); o.value=String(n); o.textContent=String(n); if(n===ev.period) o.selected=true; pSel.appendChild(o); });
-      $('editTime').value = ev.time;
-      const plSel = $('editPlayer'); plSel.innerHTML=''; state.players.forEach(p=>{ const o=document.createElement('option'); o.value=p.name; o.textContent=p.name; if(p.name===ev.player) o.selected=true; plSel.appendChild(o); });
-      // role derived from selected player
-      const role = (state.players.find(p=>p.name===plSel.value)||{role:ev.role}).role; $('editRole').value = role;
-      // type options based on role
-      const typeSel = $('editType'); typeSel.innerHTML='';
-        const types = (role==='Målvakt') ? ['Redning','Baklengsmål'] : ['Mål','Bom','Teknisk'];
-        types.forEach(t=>{ const o=document.createElement('option'); o.value=t; o.textContent=t; if(t===ev.type) o.selected=true; typeSel.appendChild(o); });
-      // assist list (all attending except player)
-      const aSel = $('editAssist'); aSel.innerHTML=''; const none = document.createElement('option'); none.value=''; none.textContent='(ingen)'; aSel.appendChild(none);
-        state.players.filter(p=>p.attending && p.name!==plSel.value).forEach(p=>{ const o=document.createElement('option'); o.value=p.name; o.textContent=p.name; if(p.name===ev.assist) o.selected=true; aSel.appendChild(o); });
-      // zone picker
-      renderZonePicker('editZone', parseInt(ev.zone||'0',10)||null, (z)=>{ state.editData.zone=String(z); });
-      // listeners
-      plSel.onchange = ()=>{ const r=(state.players.find(p=>p.name===plSel.value)||{role:'Utespiller'}).role; $('editRole').value=r; const tps=(r==='Målvakt')?['Redning','Baklengsmål']:['Mål','Bom','Teknisk']; typeSel.innerHTML=''; tps.forEach(t=>{ const o=document.createElement('option'); o.value=t; o.textContent=t; typeSel.appendChild(o); }); buildAssist(); };
-      function buildAssist(){ aSel.innerHTML=''; const none = document.createElement('option'); none.value=''; none.textContent='(ingen)'; aSel.appendChild(none); state.players.filter(p=>p.attending && p.name!==plSel.value).forEach(p=>{ const o=document.createElement('option'); o.value=p.name; o.textContent=p.name; aSel.appendChild(o); }); }
-      $('editModal').style.display='flex';
-    }
-    function closeEditModal(){ $('editModal').style.display='none'; state.editIndex=-1; state.editData=null; }
-    function saveEditedEvent(){ if(state.editIndex<0) return; const i=state.editIndex; const ev = {...state.events[i]}; ev.period = parseInt($('editPeriod').value,10)||ev.period; ev.time = $('editTime').value.trim()||ev.time; const newPlayer = $('editPlayer').value; ev.player = newPlayer; ev.role = (state.players.find(p=>p.name===newPlayer)||{role:ev.role}).role; ev.type = $('editType').value; ev.assist = $('editAssist').value; const zEl = $('editZone'); const active = zEl.querySelector('.hit.active'); ev.zone = active ? active.dataset.zone : ev.zone; state.events[i]=ev; closeEditModal(); renderEvents(); persistLocal(); }
-
-    // ======== LOKAL LAGRING ========
+    // Local storage
     function persistLocal(){ localStorage.setItem(LS_KEY, JSON.stringify({ state })); }
-    function restoreLocalIfAny(){ const raw = localStorage.getItem(LS_KEY); if(!raw) return; try{ const snap = JSON.parse(raw); if(snap && snap.state){ Object.assign(state, snap.state); } }catch{}; $('opponent').value = state.metadata.opponent||''; $('notes').value = state.metadata.notes||''; $('competition').value = state.metadata.competition||'Annet'; $('periodMinutes').value = state.metadata.periodMinutes||30; renderRoster(); }
-    function loadFromLocal(){ restoreLocalIfAny(); alert('Lastet inn lagret kampdata.'); }
+    function restoreLocalIfAny(){ const raw=localStorage.getItem(LS_KEY); if(!raw) return; try{ const snap=JSON.parse(raw); if(snap && snap.state){ Object.assign(state, snap.state); } }catch{}; $('opponent').value=state.metadata.opponent||''; $('notes').value=state.metadata.notes||''; $('competition').value=state.metadata.competition||'Annet'; $('periodMinutes').value=state.metadata.periodMinutes||30; $('soundToggle').checked=state.soundOn; $('hapticToggle').checked=state.hapticOn; renderRoster(); }
+    function loadFromLocal(){ restoreLocalIfAny(); ensureRosterRendered(); alert('Lastet inn lagret kampdata.'); }
     function clearLocal(){ localStorage.removeItem(LS_KEY); alert('Tømt lagrede kampdata lokalt.'); }
 
-    // ======== CSV ========
-    function downloadCSV(){ const header = ['Dato','Motstander','Konkurranse','Merknader','Omgang','Tid','Spiller','Rolle','Hendelse','Assist','Sone']; const rows = state.events.map(ev=>[ state.metadata.date, state.metadata.opponent||'', state.metadata.competition||'', state.metadata.notes||'', ev.period, ev.time, ev.player, ev.role, ev.type, ev.assist||'', ev.zone||'' ]); const csv = [header].concat(rows).map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n'); const blob = new Blob([csv], {type:'text/csv'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `handball_stats_${state.metadata.date}.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
+    // CSV
+    function downloadCSV(){ const header=['Dato','Motstander','Konkurranse','Merknader','Omgang','Tid','Spiller','Rolle','Hendelse','Assist','Sone']; const rows=state.events.map(ev=>[ state.metadata.date, state.metadata.opponent||'', state.metadata.competition||'', state.metadata.notes||'', ev.period, ev.time, ev.player, ev.role, ev.type, ev.assist||'', ev.zone||'' ]); const csv=[header].concat(rows).map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n'); const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`handball_stats_${state.metadata.date}.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
 
-    // ======== INNSENDING TIL GOOGLE SHEETS ========
-    async function submitToSheets(){ if(!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.length < 10){ alert('Konfigurer GOOGLE_SCRIPT_URL øverst i filen.'); return; } if(state.events.length === 0){ alert('Ingen hendelser å sende.'); return; } const payload = { metadata: { date: state.metadata.date, opponent: state.metadata.opponent||'', competition: state.metadata.competition||'', notes: state.metadata.notes||'', periodMinutes: state.metadata.periodMinutes }, players: state.players, events: state.events, gameId: `${state.metadata.date}_${Date.now()}` }; try{ const body = new URLSearchParams({ data: JSON.stringify(payload) }).toString(); const res = await fetch(GOOGLE_SCRIPT_URL, { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body }); if(!res.ok){ throw new Error('Nettverksfeil'); } let msg = 'Sendt til Google-ark.'; try{ const j = await res.json(); if(j && j.status==='ok' && j.rowsAppended){ msg += ` Rader lagt til: ${j.rowsAppended}`; } }catch{} showToast(msg); // Reset page/data
-        fullReset(); } catch(err){ console.error(err); alert('Innsendingsfeil. Sjekk internett og at Web App-URL (/exec) er satt til “Alle”.'); } }
+    // Submit
+    async function submitToSheets(){ if(!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.length<10){ alert('Konfigurer GOOGLE_SCRIPT_URL øverst i filen.'); return; } if(state.events.length===0){ alert('Ingen hendelser å sende.'); return; } const payload={ metadata:{ date:state.metadata.date, opponent:state.metadata.opponent||'', competition:state.metadata.competition||'', notes:state.metadata.notes||'', periodMinutes:state.metadata.periodMinutes }, players: state.players, events: state.events, gameId: `${state.metadata.date}_${Date.now()}` }; try{ const body=new URLSearchParams({ data: JSON.stringify(payload) }).toString(); const res=await fetch(GOOGLE_SCRIPT_URL, { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body }); if(!res.ok){ throw new Error('Nettverksfeil'); } let msg='Sendt til Google-ark.'; try{ const j=await res.json(); if(j && j.status==='ok' && j.rowsAppended){ msg += ` Rader lagt til: ${j.rowsAppended}`; } }catch{} showToast(msg); fullReset(); } catch(err){ console.error(err); alert('Innsendingsfeil. Sjekk internett og at Web App-URL (/exec) er satt til “Alle”.'); } }
+
+    function fullReset(){ state.metadata={ date:new Date().toISOString().slice(0,10), opponent:"", notes:"", competition:'Annet', periodMinutes:30 }; state.players=DEFAULT_ROSTER.map(p=>({ name:p.name, role:p.role, star:false, attending:false })); state.orderGK=state.players.filter(p=>p.role==='Målvakt').map(p=>p.name).sort((a,b)=>a.localeCompare(b)); state.orderFP=state.players.filter(p=>p.role!=='Målvakt').map(p=>p.name).sort((a,b)=>a.localeCompare(b)); state.currentPeriod=1; state.clock={running:false,startMs:0,elapsedMs:0}; state.periodStarted={1:false,2:false}; state.events=[]; state.lastZoneByPlayer={}; $('competition').value='Annet'; $('opponent').value=''; $('notes').value=''; $('periodMinutes').value=30; $('periodMinutes').disabled=false; renderRoster(); renderPlayers(); renderEvents(); updateClockUI(); $('ingame').style.display='none'; $('setup').style.display='grid'; localStorage.removeItem(LS_KEY); persistLocal(); }
+
+    function openHalftimeModal(){ alert('Pauseoppsummering kommer senere.'); }
 
     // Boot
     init();
