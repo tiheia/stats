@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Håndball – Enkel kampstatistikk</title>
+  <style>
+    :root{ --bg:#0b1220; --panel:#121a2b; --accent:#4cc9f0; --text:#e6f1ff; --muted:#9fb3c8; --bad:#ef476f; --ok:#06d6a0; --warn:#ffd166; --star:#ffd166; }
+    *,*::before,*::after{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif}
+    header{padding:12px 16px;background:linear-gradient(90deg,var(--panel),#0f1a33);display:flex;align-items:center;gap:12px}
+    h1{margin:0;font-size:20px;flex:1}
+    main{padding:16px;max-width:1100px;margin:auto}
+    .grid{display:grid;gap:12px}
+    @media(min-width:860px){.grid-2{grid-template-columns:1fr 1fr}}
+    .card{background:var(--panel);border:1px solid #1f2a44;border-radius:12px;padding:12px}
+    label{display:block;margin:8px 0 6px;color:var(--muted);font-size:13px}
+    input[type="text"],input[type="number"],select{width:100%;padding:10px 12px;border-radius:8px;border:1px solid #2a3a5c;background:#0f1730;color:var(--text)}
+    .btn{appearance:none;border:1px solid #244; background:#0f1730; color:#e6f1ff; padding:12px 14px; border-radius:10px; cursor:pointer}
+    .btn.primary{background:linear-gradient(180deg,var(--accent),#2895be); border-color:#1d6b87; color:#062231; font-weight:700}
+    .btn.success{background:linear-gradient(180deg,var(--ok),#0ab77f); border-color:#0a8f66; color:#062231; font-weight:700}
+    .btn.warn{background:linear-gradient(180deg,var(--warn),#e3b23b); border-color:#b9902f; color:#3d2b00; font-weight:700}
+    .btn.danger{background:linear-gradient(180deg,var(--bad),#cc3557); border-color:#9c2a44; color:#33010f; font-weight:700}
+    .btn.ghost{background:transparent;border-color:#2a3a5c}
+    .row{display:flex;gap:8px;flex-wrap:wrap}
+    .timer{font-variant-numeric:tabular-nums;font-size:40px;font-weight:800;letter-spacing:1px}
+    .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:#0b1430;border:1px solid #2a3a5c;color:var(--muted);font-size:12px}
+    .roster-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px}
+    .badge{padding:10px;border:1px solid #1f2a44;border-radius:12px;background:#0e1833;display:flex;flex-direction:column;gap:6px}
+    .badge.active{outline:2px solid var(--accent);box-shadow:0 0 0 3px rgba(76,201,240,.2)}
+    .badge .top{display:flex;align-items:center;gap:8px}
+    .badge .nm{font-weight:700}
+    .badge .starbtn{margin-left:auto}
+    .player-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+    .player{padding:12px;border:1px solid #1f2a44;border-radius:12px;background:#0e1833}
+    .player h4{margin:0 0 6px 0; display:flex; align-items:center; gap:8px}
+    .starbtn{border:none;background:transparent;padding:0;cursor:pointer;font-size:18px;line-height:18px;color:#2a3a5c}
+    .starbtn.on{color:var(--star)}
+    .actions{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}
+    .actions .btn{padding:16px 12px;font-size:15px}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th,td{padding:8px;border-bottom:1px solid #22324f}
+    tr:hover{background:#0f1a35}
+    .kpi{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+    .kpi .k{background:#0e1833;border:1px solid #1f2a44;border-radius:12px;padding:10px}
+    .muted{color:var(--muted)}
+    .small{font-size:12px}
+    .sticky-footer{position:sticky;bottom:0;left:0;right:0;background:linear-gradient(180deg,rgba(11,18,32,0),var(--bg) 25%);padding:12px 0;margin-top:8px}
+    .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#0e1833;border:1px solid #1f2a44;color:#e6f1ff;border-radius:12px;padding:10px 14px;z-index:2000;display:none;box-shadow:0 6px 24px rgba(0,0,0,.35)}
+    .toast.show{display:block;animation:fadein .2s ease-out}
+    @keyframes fadein{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}
+  </style>
+</head>
+<body>
+<!-- Full HTML content continues here with script and body -->
+</body>
+</html>
