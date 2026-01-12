@@ -27,6 +27,15 @@
     .timer{font-variant-numeric:tabular-nums;font-size:40px;font-weight:800;letter-spacing:1px}
     .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:#0b1430;border:1px solid #2a3a5c;color:var(--muted);font-size:12px}
 
+    /* Roster grid + badges */
+    .roster-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px}
+    .badge{padding:10px;border:1px solid #1f2a44;border-radius:12px;background:#0e1833;display:flex;flex-direction:column;gap:6px}
+    .badge.active{outline:2px solid var(--accent);box-shadow:0 0 0 3px rgba(76,201,240,.2)}
+    .badge .top{display:flex;align-items:center;gap:8px}
+    .badge .nm{font-weight:700}
+    .badge .starbtn{margin-left:auto}
+
+    /* Player cards */
     .player-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
     .player{padding:12px;border:1px solid #1f2a44;border-radius:12px;background:#0e1833}
     .player h4{margin:0 0 6px 0; display:flex; align-items:center; gap:8px}
@@ -307,7 +316,7 @@
       { name:'Oskar', role:'Utespiller', star:false, attending:false },
       { name:'Adrian A', role:'Utespiller', star:false, attending:false },
       { name:'Adrian B', role:'Utespiller', star:false, attending:false } ];
-    const LS_KEY = 'handball_stats_no_v22b';
+    const LS_KEY = 'handball_stats_no_v22c';
 
     const state = {
       metadata: { date: new Date().toISOString().slice(0,10), opponent: '', notes: '', competition: 'Annet', periodMinutes: 30 },
@@ -384,8 +393,66 @@
         ${numBtn(8, 556,320, sel(8))}
         ${textBtn('7m', 388,100, sel('7m'))}
       </svg>`; }
-    function numBtn(n,x,y,cls){ return `<g class="numbtn${cls}" data-zone="${'${'}n{'}'}"><circle cx="${'${'}x{'}'}" cy="${'${'}y{'}'}" r="22"></circle><text x="${'${'}x{'}'}" y="${'${'}y{'}'}">${'${'}n{'}'}</text></g>`; }
-    function textBtn(label,x,y,cls){ return `<g class="numbtn${cls}" data-zone="${'${'}label{'}'}"><circle cx="${'${'}x{'}'}" cy="${'${'}y{'}'}" r="22"></circle><text x="${'${'}x{'}'}" y="${'${'}y{'}'}">${'${'}label{'}'}</text></g>`; }
+    function numBtn(n,x,y,cls){ return `<g class="numbtn${cls}" data-zone="${n}"><circle cx="${x}" cy="${y}" r="22"></circle><text x="${x}" y="${y}">${n}</text></g>`; }
+    function textBtn(label,x,y,cls){ return `<g class="numbtn${cls}" data-zone="${label}"><circle cx="${x}" cy="${y}" r="22"></circle><text x="${x}" y="${y}">${label}</text></g>`; }
+
+    function renderZonePicker(targetId, selected, onSelect){ const tgt=$(targetId); tgt.innerHTML=zoneSVG(selected); tgt.querySelectorAll('[data-zone]').forEach(el=>{ el.addEventListener('click', ()=>{ const z=el.dataset.zone; onSelect(isNaN(parseInt(z,10))?z:parseInt(z,10)); tgt.querySelectorAll('.numbtn').forEach(a=>a.classList.remove('selected')); el.classList.add('selected'); }); }); }
+
+    function openGoalModal(player){ state.goalForm = { player, zone: state.lastZoneByPlayer[player] || null, assist:'' }; $('goalWho').textContent = `${player}`; renderZonePicker('goalZone', state.goalForm.zone, (z)=>{ state.goalForm.zone=z; renderAssistList(); }); renderAssistList(); $('goalModal').style.display='flex'; }
+    function renderAssistList(){ const list=$('assistList'); list.innerHTML=''; const scorer=state.goalForm.player; const attending=state.players.filter(p=>p.attending && p.name!==scorer); const noneBtn=document.createElement('button'); noneBtn.className='btn ghost'; noneBtn.textContent='Ingen assist'; noneBtn.style.margin='0 0 8px 0'; noneBtn.onclick=()=>{ state.goalForm.assist=''; confirmGoal(); }; if(!state.goalForm.zone){ noneBtn.disabled=true; } list.appendChild(noneBtn); attending.forEach(p=>{ const b=document.createElement('button'); b.className='btn'; b.style.display='block'; b.style.width='100%'; b.style.margin='4px 0'; b.textContent=p.name; b.onclick=()=>{ state.goalForm.assist=p.name; confirmGoal(); }; if(!state.goalForm.zone){ b.disabled=true; } list.appendChild(b); }); }
+    function closeGoalModal(){ $('goalModal').style.display='none'; }
+    function confirmGoal(){ const g=state.goalForm; addEvent(g.player,'Utespiller','Mål',g.assist||'',String(g.zone||'')); state.lastZoneByPlayer[g.player]=g.zone; closeGoalModal(); }
+
+    function openConcedeModal(player){ state.concedeForm = { player, zone: state.lastZoneByPlayer[player] || null }; $('concedeWho').textContent = `${player}`; renderZonePicker('concedeZone', state.concedeForm.zone, (z)=>{ state.concedeForm.zone=z; confirmConcede(); }); $('concedeModal').style.display='flex'; }
+    function closeConcedeModal(){ $('concedeModal').style.display='none'; }
+    function confirmConcede(){ const c=state.concedeForm; addEvent(c.player,'Målvakt','Baklengsmål','',String(c.zone||'')); state.lastZoneByPlayer[c.player]=c.zone; closeConcedeModal(); }
+
+    function openSaveModal(player){ state.saveForm = { player, zone: state.lastZoneByPlayer[player] || null }; $('saveWho').textContent = `${player}`; renderZonePicker('saveZone', state.saveForm.zone, (z)=>{ state.saveForm.zone=z; confirmSave(); }); $('saveModal').style.display='flex'; }
+    function closeSaveModal(){ $('saveModal').style.display='none'; }
+    function confirmSave(){ const s=state.saveForm; addEvent(s.player,'Målvakt','Redning','',String(s.zone||'')); state.lastZoneByPlayer[s.player]=s.zone; closeSaveModal(); }
+
+    function openSummary(){ $('summaryModal').style.display='flex'; renderSummary(); }
+    function closeSummary(){ $('summaryModal').style.display='none'; }
+    function renderSummary(){
+      const periodSel = $('summaryPeriod').value; const zones = ['1','2','3','4','5','6','7','8','7m'];
+      const ourGoals = Object.fromEntries(zones.map(z=>[z,0]));
+      const ourMiss  = Object.fromEntries(zones.map(z=>[z,0]));
+      const oppConceded = Object.fromEntries(zones.map(z=>[z,0]));
+      const oppSaved    = Object.fromEntries(zones.map(z=>[z,0]));
+      const periodFilter = (e)=> periodSel==='all' ? true : e.period===parseInt(periodSel,10);
+      state.events.filter(periodFilter).forEach(e=>{
+        const z = String(e.zone||''); if(!zones.includes(z)) return;
+        if(e.role==='Utespiller'){ if(e.type==='Mål') ourGoals[z]++; if(e.type==='Bom') ourMiss[z]++; }
+        else if(e.role==='Målvakt'){ if(e.type==='Baklengsmål' || e.type==='Mål') oppConceded[z]++; if(e.type==='Redning') oppSaved[z]++; }
+      });
+      const totOurGoals = Object.values(ourGoals).reduce((a,b)=>a+b,0);
+      const totOurShots = zones.reduce((sum,z)=> sum + ourGoals[z] + ourMiss[z], 0);
+      const ourConv = totOurShots>0 ? Math.round(100*totOurGoals/totOurShots) : 0;
+      const totOppConceded = Object.values(oppConceded).reduce((a,b)=>a+b,0);
+      const totOppShots = zones.reduce((sum,z)=> sum + oppConceded[z] + oppSaved[z], 0);
+      const oppConv = totOppShots>0 ? Math.round(100*totOppConceded/totOppShots) : 0;
+
+      const scorerCount = {}; state.events.filter(e=> (e.role==='Utespiller' && e.type==='Mål') && (periodSel==='all' ? true : e.period===parseInt(periodSel,10))).forEach(e=>{ scorerCount[e.player]=(scorerCount[e.player]||0)+1; });
+      const topScorers = Object.entries(scorerCount).sort((a,b)=> b[1]-a[1]).slice(0,5);
+
+      const gkSavesByZone = Object.fromEntries(zones.map(z=>[z,0])); state.events.filter(e=> (e.role==='Målvakt' && e.type==='Redning') && (periodSel==='all' ? true : e.period===parseInt(periodSel,10))).forEach(e=>{ const z=String(e.zone||''); if(zones.includes(z)) gkSavesByZone[z]++; });
+
+      const body = $('summaryBody'); body.innerHTML='';
+      const hdr = document.createElement('div'); hdr.innerHTML = `<div class="row" style="justify-content:space-between"><div class="pill">Våre: ${totOurGoals}/${totOurShots} (${ourConv}%)</div><div class="pill">Motstander: ${totOppConceded}/${totOppShots} (${oppConv}%)</div></div>`; body.appendChild(hdr);
+      const grid = document.createElement('div'); grid.style.display='grid'; grid.style.gridTemplateColumns='repeat(3,1fr)'; grid.style.gap='10px';
+      zones.forEach(z=>{ const oShots = ourGoals[z] + ourMiss[z]; const oConv = oShots>0 ? Math.round(100*ourGoals[z]/oShots) : 0; const pShots = oppConceded[z] + oppSaved[z]; const pConv = pShots>0 ? Math.round(100*oppConceded[z]/pShots) : 0; const card = document.createElement('div'); card.className='card'; card.style.padding='10px'; card.innerHTML = `<div style="font-weight:700;margin-bottom:6px">Sone ${z}</div><div class="small muted">Våre: ${ourGoals[z]}/${oShots} (${oConv}%)</div><div class="bar"><span style="width:${oConv}%"></span></div><div class="small muted" style="margin-top:6px">Motstander: ${oppConceded[z]}/${pShots} (${pConv}%)</div><div class="bar bad"><span style="width:${pConv}%"></span></div><div class="small muted" style="margin-top:6px">GK-redninger: ${gkSavesByZone[z]}</div>`; grid.appendChild(card); });
+      body.appendChild(grid);
+      const topWrap = document.createElement('div'); topWrap.style.marginTop='10px'; topWrap.className='card'; topWrap.style.padding='10px'; topWrap.innerHTML = topScorers.length? `<div style="font-weight:700;margin-bottom:6px">Topp 5 målscorere (${periodSel==='all'?'hele kampen':periodSel+'. omgang'})</div><ul style="margin:0;padding-left:18px">${topScorers.map(([n,c])=>`<li>${n}: ${c}</li>`).join('')}</ul>` : `<div class="small muted">Ingen mål registrert.</div>`; body.appendChild(topWrap);
+    }
+
+    function persistLocal(){ localStorage.setItem(LS_KEY, JSON.stringify({ state })); }
+    function restoreLocalIfAny(){ const raw=localStorage.getItem(LS_KEY); if(!raw) return; try{ const snap=JSON.parse(raw); if(snap && snap.state){ Object.assign(state, snap.state); } }catch{}; $('opponent').value=state.metadata.opponent||''; $('notes').value=state.metadata.notes||''; $('competition').value=state.metadata.competition||'Annet'; $('periodMinutes').value=state.metadata.periodMinutes||30; }
+    function loadFromLocal(){ restoreLocalIfAny(); renderRoster(); alert('Lastet inn lagret kampdata.'); }
+    function clearLocal(){ localStorage.removeItem(LS_KEY); alert('Tømt lagrede kampdata lokalt.'); }
+
+    function downloadCSV(){ const header=['Dato','Motstander','Konkurranse','Merknader','Omgang','Tid','Spiller','Rolle','Hendelse','Assist','Sone']; const rows=state.events.map(ev=>[ state.metadata.date, state.metadata.opponent||'', state.metadata.competition||'', state.metadata.notes||'', ev.period, ev.time, ev.player, ev.role, ev.type, ev.assist||'', ev.zone||'' ]); const csv=[header].concat(rows).map(r=>r.map(x=>`"${String(x).replace(/\"/g,'\"\"')}"`).join(',')).join('\n'); const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`handball_stats_${state.metadata.date}.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
+
+    init();
   </script>
 </body>
 </html>
