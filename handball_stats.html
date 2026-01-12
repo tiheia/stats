@@ -53,13 +53,13 @@
     /* Zone SVG styles */
     .zone-wrap{width:100%;}
     svg.zone{width:100%;height:auto;border-radius:12px;background:#7bb7da}
-    .zone .court{fill:#76b6d8}
-    .zone .six{fill:#0b4a78}
-    .zone .goal{fill:#073656}
-    .zone .nine{fill:none;stroke:#fff;stroke-dasharray:8 6;opacity:.8}
-    .zone .redline{fill:none;stroke:#b11c4a;stroke-width:3}
-    .zone .diag{stroke:#b11c4a;stroke-width:3}
-    .zone .num{font-size:20px;fill:#fff;font-weight:700;text-anchor:middle}
+    .zone .court{fill:#76b6d8; pointer-events:none}
+    .zone .six{fill:#0b4a78; pointer-events:none}
+    .zone .goal{fill:#073656; pointer-events:none}
+    .zone .nine{fill:none;stroke:#fff;stroke-dasharray:8 6;opacity:.8; pointer-events:none}
+    .zone .redline{fill:none;stroke:#b11c4a;stroke-width:3; pointer-events:none}
+    .zone .diag{stroke:#b11c4a;stroke-width:3; pointer-events:none}
+    .zone .num{font-size:20px;fill:#fff;font-weight:700;text-anchor:middle; pointer-events:none}
     .zone .hit{fill:rgba(76,201,240,0);cursor:pointer}
     .zone .hit:hover{fill:rgba(76,201,240,.15)}
     .zone .hit.active{fill:rgba(76,201,240,.35);stroke:var(--accent);stroke-width:2}
@@ -210,9 +210,9 @@
       </div>
       <div class="section-title">Zone (tap on the court)</div>
       <div id="goalZone" class="zone-wrap"></div>
+      <!-- Save button removed; auto-save on zone selection -->
       <div class="row" style="justify-content:flex-end;margin-top:10px">
-        <button class="btn" onclick="closeGoalModal()">Cancel</button>
-        <button id="btnSaveGoal" class="btn success" onclick="confirmGoal()" disabled>Save goal</button>
+        <button class="btn" onclick="closeGoalModal()">Close</button>
       </div>
     </div>
   </div>
@@ -225,15 +225,14 @@
       <div class="section-title">Zone (tap on the court)</div>
       <div id="concedeZone" class="zone-wrap"></div>
       <div class="row" style="justify-content:flex-end;margin-top:10px">
-        <button class="btn" onclick="closeConcedeModal()">Cancel</button>
-        <button id="btnSaveConcede" class="btn danger" onclick="confirmConcede()" disabled>Save conceded</button>
+        <button class="btn" onclick="closeConcedeModal()">Close</button>
       </div>
     </div>
   </div>
 
   <script>
     // ======== CONFIG ========
-    const GOOGLE_SCRIPT_URL = https://script.google.com/macros/s/AKfycbxruXaKx3QmFAMbJttYi7y6MY1Na_WETAcyb4_Lg6u35TwFqIb52E10aYJW2SOQWdNM_g/exec; // e.g., https://script.google.com/macros/s/AKfycbx.../exec
+    const GOOGLE_SCRIPT_URL = "PASTE_WEB_APP_URL_HERE".trim(); // e.g., https://script.google.com/macros/s/AKfycbx.../exec
 
     // Default roster with 3 goalkeepers
     const DEFAULT_ROSTER = [
@@ -267,6 +266,7 @@
       renderRoster();
       restoreLocalIfAny();
       onCompetitionChange();
+      console.log('Apps Script URL:', GOOGLE_SCRIPT_URL);
     }
 
     function renderRoster(){
@@ -280,8 +280,8 @@
             <label class=\"toggle\"><input type=\"checkbox\" data-idx=\"${idx}\" ${p.attending?'checked':''} onchange=\"onAttendToggle(event)\" /> Attending</label>
           </div>
           <div class=\"seg\">
-            <button class=\"opt ${p.role==='Field'?'active':''}\" data-idx=\"${idx}\" data-role=\"Field\" onclick=\"onRoleClick(event)\">Field</button>
-            <button class=\"opt ${p.role==='Goalkeeper'?'active':''}\" data-idx=\"${idx}\" data-role=\"Goalkeeper\" onclick=\"onRoleClick(event)\">Goalkeeper</button>
+            <button class=\"opt ${p.role==='Field'?'active':''}\" data-idx=\"${idx}\" data-role=\"Field\" onclick=\"onRoleClick(event)\" role=\"button\">Field</button>
+            <button class=\"opt ${p.role==='Goalkeeper'?'active':''}\" data-idx=\"${idx}\" data-role=\"Goalkeeper\" onclick=\"onRoleClick(event)\" role=\"button\">Goalkeeper</button>
           </div>
         `;
         list.appendChild(item);
@@ -291,7 +291,6 @@
     function onRename(e){ const i=+e.target.dataset.idx; state.players[i].name = e.target.value.trim(); persistLocal(); }
     function onAttendToggle(e){ const i=+e.target.dataset.idx; state.players[i].attending = e.target.checked; persistLocal(); }
     function onRoleClick(e){ const i=+e.target.dataset.idx; const r=e.target.dataset.role; state.players[i].role = r; renderRoster(); persistLocal(); }
-
     function addCustomPlayer(){ state.players.push({name:"New Player", role:'Field', attending:true}); renderRoster(); persistLocal(); }
     function markFieldPlayersAttending(){ state.players.forEach(p=>{ if(p.role==='Field') p.attending=true; }); renderRoster(); persistLocal(); }
     function selectNone(){ state.players.forEach(p=> p.attending=false ); renderRoster(); persistLocal(); }
@@ -305,7 +304,6 @@
         state.metadata.periodMinutes = 25; minutesInput.value = 25; minutesInput.disabled = true;
       } else {
         minutesInput.disabled = false; // allow manual for Annet
-        // keep current value
       }
       persistLocal();
     }
@@ -314,7 +312,6 @@
     function startGame(){
       state.metadata.opponent = $("opponent").value.trim();
       state.metadata.notes = $("notes").value.trim();
-      // competition already handled
       state.metadata.periodMinutes = Math.max(1, parseInt($("periodMinutes").value || String(state.metadata.periodMinutes), 10));
       state.attending = state.players.filter(p=>p.attending).map(p=>p.name);
       if(state.attending.length === 0){ alert('Select at least one attending player.'); return; }
@@ -410,14 +407,14 @@
         <text class=\"num\" x=\"140\" y=\"220\">6</text>
         <text class=\"num\" x=\"277\" y=\"250\">7</text>
         <text class=\"num\" x=\"414\" y=\"220\">8</text>
-        <circle class=\"hit${isSel(1)}\" data-zone=\"1\" cx=\"65\" cy=\"100\" r=\"28\"/>
-        <circle class=\"hit${isSel(2)}\" data-zone=\"2\" cx=\"205\" cy=\"120\" r=\"28\"/>
-        <circle class=\"hit${isSel(3)}\" data-zone=\"3\" cx=\"277\" cy=\"140\" r=\"28\"/>
-        <circle class=\"hit${isSel(4)}\" data-zone=\"4\" cx=\"349\" cy=\"120\" r=\"28\"/>
-        <circle class=\"hit${isSel(5)}\" data-zone=\"5\" cx=\"489\" cy=\"100\" r=\"28\"/>
-        <circle class=\"hit${isSel(6)}\" data-zone=\"6\" cx=\"140\" cy=\"220\" r=\"32\"/>
-        <circle class=\"hit${isSel(7)}\" data-zone=\"7\" cx=\"277\" cy=\"250\" r=\"32\"/>
-        <circle class=\"hit${isSel(8)}\" data-zone=\"8\" cx=\"414\" cy=\"220\" r=\"32\"/>
+        <circle class=\"hit${isSel(1)}\" data-zone=\"1\" cx=\"65\" cy=\"100\" r=\"34\"/>
+        <circle class=\"hit${isSel(2)}\" data-zone=\"2\" cx=\"205\" cy=\"120\" r=\"34\"/>
+        <circle class=\"hit${isSel(3)}\" data-zone=\"3\" cx=\"277\" cy=\"140\" r=\"34\"/>
+        <circle class=\"hit${isSel(4)}\" data-zone=\"4\" cx=\"349\" cy=\"120\" r=\"34\"/>
+        <circle class=\"hit${isSel(5)}\" data-zone=\"5\" cx=\"489\" cy=\"100\" r=\"34\"/>
+        <circle class=\"hit${isSel(6)}\" data-zone=\"6\" cx=\"140\" cy=\"220\" r=\"38\"/>
+        <circle class=\"hit${isSel(7)}\" data-zone=\"7\" cx=\"277\" cy=\"250\" r=\"38\"/>
+        <circle class=\"hit${isSel(8)}\" data-zone=\"8\" cx=\"414\" cy=\"220\" r=\"38\"/>
       </svg>`;
     }
 
@@ -430,26 +427,42 @@
     function openGoalModal(player){
       state.goalForm = { player, assist:"", zone:null };
       $("goalWho").textContent = `${player} – Field`;
+
+      // Assist list
       const list = $("assistList"); list.innerHTML = '';
       const attending = state.players.filter(p=>p.attending && p.role==='Field' && p.name!==player);
-      const noneBtn = document.createElement('button'); noneBtn.className='btn ghost'; noneBtn.textContent = 'No assist'; noneBtn.style.margin='0 0 8px 0'; noneBtn.onclick = () => { state.goalForm.assist=''; highlightAssist(); }; list.appendChild(noneBtn);
-      attending.forEach(p=>{ const b = document.createElement('button'); b.className='btn'; b.style.display='block'; b.style.width='100%'; b.style.margin='4px 0'; b.textContent = p.name; b.onclick = () => { state.goalForm.assist=p.name; highlightAssist(); }; list.appendChild(b); });
+      const noneBtn = document.createElement('button'); noneBtn.className='btn ghost'; noneBtn.textContent = 'No assist'; noneBtn.style.margin='0 0 8px 0';
+      noneBtn.onclick = () => { state.goalForm.assist=''; highlightAssist(); };
+      list.appendChild(noneBtn);
+      attending.forEach(p=>{
+        const b = document.createElement('button'); b.className='btn'; b.style.display='block'; b.style.width='100%'; b.style.margin='4px 0';
+        b.textContent = p.name; b.onclick = () => { state.goalForm.assist=p.name; highlightAssist(); };
+        list.appendChild(b);
+      });
       highlightAssist();
-      renderZonePicker('goalZone', state.goalForm.zone, (z)=>{ state.goalForm.zone=z; $("btnSaveGoal").disabled = !(state.goalForm.zone); updateZoneHighlight('goalZone', z); }); $("btnSaveGoal").disabled = true; $("goalModal").style.display='flex';
+
+      // Auto-save on zone select
+      renderZonePicker('goalZone', null, (z)=>{ state.goalForm.zone=z; confirmGoal(); });
+      $("goalModal").style.display='flex';
     }
 
-    function updateZoneHighlight(targetId, selected){ const tgt = $(targetId); tgt.querySelectorAll('.hit').forEach(h=>{ if(parseInt(h.dataset.zone,10)===selected) h.classList.add('active'); else h.classList.remove('active'); }); }
-    function highlightAssist(){ const list = $("assistList"); Array.from(list.querySelectorAll('button')).forEach(btn => { if(btn.textContent === (state.goalForm.assist || 'No assist')) btn.style.outline='2px solid var(--accent)'; else btn.style.outline='none'; }); }
+    function highlightAssist(){
+      const list = $("assistList");
+      Array.from(list.querySelectorAll('button')).forEach(btn => {
+        if(btn.textContent === (state.goalForm.assist || 'No assist')) btn.style.outline='2px solid var(--accent)'; else btn.style.outline='none';
+      });
+    }
+
     function closeGoalModal(){ $("goalModal").style.display='none'; }
-    function confirmGoal(){ const g = state.goalForm; if(!g.zone){ alert('Select a zone'); return; } addEvent(g.player,'Field','Goal',g.assist||'',String(g.zone)); closeGoalModal(); }
+    function confirmGoal(){ const g = state.goalForm; addEvent(g.player,'Field','Goal',g.assist||'',String(g.zone||'')); closeGoalModal(); }
 
     // ======== CONCEDE (GOALKEEPER) ========
-    function openConcedeModal(player){ state.concedeForm = { player, zone:null }; $("concedeWho").textContent = `${player} – Goalkeeper`; renderZonePicker('concedeZone', state.concedeForm.zone, (z)=>{ state.concedeForm.zone=z; $("btnSaveConcede").disabled = !(state.concedeForm.zone); updateZoneHighlight('concedeZone', z); }); $("btnSaveConcede").disabled = true; $("concedeModal").style.display='flex'; }
+    function openConcedeModal(player){ state.concedeForm = { player, zone:null }; $("concedeWho").textContent = `${player} – Goalkeeper`; renderZonePicker('concedeZone', null, (z)=>{ state.concedeForm.zone=z; confirmConcede(); }); $("concedeModal").style.display='flex'; }
     function closeConcedeModal(){ $("concedeModal").style.display='none'; }
-    function confirmConcede(){ const c = state.concedeForm; if(!c.zone){ alert('Select a zone'); return; } addEvent(c.player,'Goalkeeper','Goal Conceded','',String(c.zone)); closeConcedeModal(); }
+    function confirmConcede(){ const c = state.concedeForm; addEvent(c.player,'Goalkeeper','Goal Conceded','',String(c.zone||'')); closeConcedeModal(); }
 
     // ======== LOCAL STORAGE ========
-    const LS_KEY = 'handball_stats_game_v5';
+    const LS_KEY = 'handball_stats_game_v6';
     function persistLocal(){ localStorage.setItem(LS_KEY, JSON.stringify({ state })); }
     function restoreLocalIfAny(){ const raw = localStorage.getItem(LS_KEY); if(!raw) return; try{ const snap = JSON.parse(raw); if(snap && snap.state){ Object.assign(state, snap.state); } }catch{}; $("opponent").value = state.metadata.opponent||''; $("notes").value = state.metadata.notes||''; $("competition").value = state.metadata.competition||'Annet'; $("periodMinutes").value = state.metadata.periodMinutes||30; renderRoster(); }
     function loadFromLocal(){ restoreLocalIfAny(); alert('Loaded any saved game data from this device.'); }
@@ -459,7 +472,22 @@
     function downloadCSV(){ const header = ['Date','Opponent','Competition','Notes','Period','Time','Player','Role','Event','Assist','Zone']; const rows = state.events.map(ev=>[ state.metadata.date, state.metadata.opponent||'', state.metadata.competition||'', state.metadata.notes||'', ev.period, ev.time, ev.player, ev.role, ev.type, ev.assist||'', ev.zone||'' ]); const csv = [header].concat(rows).map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n'); const blob = new Blob([csv], {type:'text/csv'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `handball_stats_${state.metadata.date}.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
 
     // ======== SUBMIT TO GOOGLE SHEETS (Apps Script Web App) ========
-    async function submitToSheets(){ if(!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes('PASTE_WEB_APP_URL_HERE')){ alert('Please configure GOOGLE_SCRIPT_URL at the top of the file.'); return; } if(state.events.length === 0){ alert('No events to submit.'); return; } const payload = { metadata: { date: state.metadata.date, opponent: state.metadata.opponent||'', competition: state.metadata.competition||'', notes: state.metadata.notes||'', periodMinutes: state.metadata.periodMinutes }, players: state.players, events: state.events, gameId: `${state.metadata.date}_${Date.now()}` }; try{ const body = new URLSearchParams({ data: JSON.stringify(payload) }).toString(); const res = await fetch(GOOGLE_SCRIPT_URL, { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body }); if(!res.ok){ throw new Error('Network error'); } let msg = 'Submitted to Google Sheet.'; try{ const j = await res.json(); if(j && j.status==='ok' && j.rowsAppended){ msg += ` Rows appended: ${j.rowsAppended}`; } }catch{} alert(msg); localStorage.setItem(LS_KEY+"_backup", JSON.stringify({state})); state.events = []; renderEvents(); persistLocal(); } catch(err){ console.error(err); alert('Submit failed. Please check your internet connection and the Apps Script URL.'); } }
+    async function submitToSheets(){
+      // Robust URL check
+      if(!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.length < 10){ alert('Please configure GOOGLE_SCRIPT_URL at the top of the file.'); return; }
+      if(state.events.length === 0){ alert('No events to submit.'); return; }
+      const payload = { metadata: { date: state.metadata.date, opponent: state.metadata.opponent||'', competition: state.metadata.competition||'', notes: state.metadata.notes||'', periodMinutes: state.metadata.periodMinutes }, players: state.players, events: state.events, gameId: `${state.metadata.date}_${Date.now()}` };
+      try{
+        const body = new URLSearchParams({ data: JSON.stringify(payload) }).toString();
+        const res = await fetch(GOOGLE_SCRIPT_URL, { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body });
+        if(!res.ok){ throw new Error('Network error'); }
+        let msg = 'Submitted to Google Sheet.';
+        try{ const j = await res.json(); if(j && j.status==='ok' && j.rowsAppended){ msg += ` Rows appended: ${j.rowsAppended}`; } }catch{}
+        alert(msg);
+        localStorage.setItem(LS_KEY+"_backup", JSON.stringify({state}));
+        state.events = []; renderEvents(); persistLocal();
+      } catch(err){ console.error(err); alert('Submit failed. Check internet and the Apps Script Web App URL (must end with /exec and access set to Anyone).'); }
+    }
 
     // Boot
     init();
