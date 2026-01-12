@@ -12,15 +12,16 @@
     }
     *{box-sizing:border-box}
     body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial,sans-serif}
-    header{padding:12px 16px;background:linear-gradient(90deg,var(--panel),#0f1a33)}
-    h1{margin:0;font-size:20px}
+    header{padding:12px 16px;background:linear-gradient(90deg,var(--panel),#0f1a33);display:flex;align-items:center;gap:12px}
+    h1{margin:0;font-size:20px;flex:1}
+    .togglebox{display:flex;align-items:center;gap:8px;color:#9fb3c8;font-size:12px}
     main{padding:16px;max-width:1100px;margin:auto}
     .grid{display:grid;gap:12px}
     @media(min-width:860px){.grid-2{grid-template-columns:1fr 1fr}}
     .card{background:var(--panel);border:1px solid #1f2a44;border-radius:12px;padding:12px}
     label{display:block;margin:8px 0 6px;color:var(--muted);font-size:13px}
     input[type="text"],input[type="number"],select{width:100%;padding:10px 12px;border-radius:8px;border:1px solid #2a3a5c;background:#0f1730;color:var(--text)}
-    .btn{appearance:none;border:1px solid #244; background:#0f1730; color:#e6f1ff; padding:10px 12px; border-radius:10px; cursor:pointer}
+    .btn{appearance:none;border:1px solid #244; background:#0f1730; color:#e6f1ff; padding:12px 14px; border-radius:10px; cursor:pointer}
     .btn.primary{background:linear-gradient(180deg,var(--accent),#2895be); border-color:#1d6b87; color:#062231; font-weight:700}
     .btn.success{background:linear-gradient(180deg,var(--ok),#0ab77f); border-color:#0a8f66; color:#062231; font-weight:700}
     .btn.warn{background:linear-gradient(180deg,var(--warn),#e3b23b); border-color:#b9902f; color:#3d2b00; font-weight:700}
@@ -29,12 +30,16 @@
     .row{display:flex;gap:8px;flex-wrap:wrap}
     .timer{font-variant-numeric:tabular-nums;font-size:40px;font-weight:800;letter-spacing:1px}
     .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:#0b1430;border:1px solid #2a3a5c;color:var(--muted);font-size:12px}
-    .player-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+    .player-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
     .player{padding:12px;border:1px solid #1f2a44;border-radius:12px;background:#0e1833}
-    .player h4{margin:0 0 8px 0}
-    .player .role{font-size:12px;color:var(--muted)}
-    .actions{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px}
+    .player h4{margin:0 0 6px 0}
+    .player .role{font-size:12px;color:#9fb3c8}
+    /* (3) condensed strip + larger hit targets */
+    .actions{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
     .actions .wide{grid-column:1/-1}
+    .actions .btn{padding:16px 12px;font-size:15px}
+    @media(max-width:560px){.actions{grid-template-columns:1fr 1fr}.actions .btn{padding:18px 14px;font-size:16px}}
+    
     table{width:100%;border-collapse:collapse;font-size:14px}
     th,td{padding:8px;border-bottom:1px solid #22324f}
     tr:hover{background:#0f1a35}
@@ -55,40 +60,40 @@
     .modal .list{max-height:42vh;overflow:auto}
     .section-title{margin:8px 0 6px;color:var(--muted);font-size:13px}
 
-    /* Sone-SVG (polygonflater) */
+    /* Sone-SVG (visuelt som bildet) */
     .zone-wrap{width:100%;}
     svg.zone{width:100%;height:auto;border-radius:12px;background:#7bb7da}
-    .zone .court{fill:#76b6d8; pointer-events:none}
-    .zone .six{fill:#0b4a78; pointer-events:none}
-    .zone .goal{fill:#073656; pointer-events:none}
-    .zone .nine{fill:none;stroke:#fff;stroke-dasharray:8 6;opacity:.8; pointer-events:none}
-    .zone .redline{fill:none;stroke:#b11c4a;stroke-width:3; pointer-events:none}
+    .zone .court{fill:#7bb7da; pointer-events:none}
+    .zone .goal{fill:#0e4165; pointer-events:none}
+    .zone .nine{fill:none;stroke:#ffffff;stroke-dasharray:8 6;opacity:.85; pointer-events:none}
+    .zone .six{fill:none;stroke:#b11c4a;stroke-width:3; pointer-events:none}
+    .zone .goalbox{fill:none;stroke:#ffffff;stroke-dasharray:6 6;opacity:.7; pointer-events:none}
     .zone .num{font-size:20px;fill:#fff;font-weight:700;text-anchor:middle; pointer-events:none}
     .zone .area{fill:rgba(76,201,240,0);cursor:pointer;stroke:rgba(0,0,0,0)}
     .zone .area:hover{fill:rgba(76,201,240,.12)}
     .zone .area.selected{fill:rgba(76,201,240,.35);stroke:var(--accent);stroke-width:2}
 
-    /* Pauseoppsummering */
-    .summary-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:6px}
-    .summary-item{background:#0e1833;border:1px solid #1f2a44;border-radius:10px;padding:8px;text-align:center}
-    .summary-item .zone{font-size:12px;color:#9fb3c8}
-    .summary-item .val{font-size:18px;font-weight:800}
-
-    /* Mobilvennlig tropp */
-    .roster-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
-    .badge{padding:10px;border:1px solid #1f2a44;border-radius:12px;background:#0e1833;cursor:pointer;display:flex;flex-direction:column;gap:6px}
+    /* Roster: GK block + FP block, drag and drop */
+    .roster-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px}
+    .list-title{color:#9fb3c8;font-size:12px;margin:6px 0 4px}
+    .badge{padding:10px;border:1px solid #1f2a44;border-radius:12px;background:#0e1833;cursor:grab;display:flex;flex-direction:column;gap:6px}
+    .badge:active{cursor:grabbing}
     .badge.active{outline:2px solid var(--accent); box-shadow:0 0 0 3px rgba(76,201,240,.2)}
+    .badge .top{display:flex;align-items:center;justify-content:space-between}
     .badge .nm{font-weight:700}
     .badge .rl{font-size:12px;color:#9fb3c8}
-
-    /* Rediger modal */
-    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-    @media(max-width:560px){.form-grid{grid-template-columns:1fr}}
+    .star{color:#ffd166;cursor:pointer;font-size:18px;line-height:18px}
+    .star.off{color:#2a3a5c}
+    .drag-placeholder{border:2px dashed #2a3a5c;border-radius:12px;height:60px}
   </style>
 </head>
 <body>
   <header>
     <h1>Håndball – Enkel kampstatistikk</h1>
+    <div class="togglebox">
+      <label><input id="soundToggle" type="checkbox" checked> Lyd</label>
+      <label><input id="hapticToggle" type="checkbox" checked> Haptisk</label>
+    </div>
   </header>
   <main>
     <!-- FØR KAMP -->
@@ -127,11 +132,14 @@
 
       <div class="card">
         <h2 style="margin-top:0">2) Velg spillere som deltar</h2>
-        <div class="row" style="margin-bottom:8px">
+        <div class="list-title">Målvakter (øverst)</div>
+        <div id="gkList" class="roster-list" ondragover="onDragOver(event)" ondrop="onDrop(event)" ></div>
+        <div class="list-title">Utespillere</div>
+        <div id="fpList" class="roster-list" ondragover="onDragOver(event)" ondrop="onDrop(event)"></div>
+        <div class="row" style="margin-top:8px">
           <button class="btn success" onclick="markFieldPlayersAttending()">Marker alle utespillere</button>
           <button class="btn" onclick="selectNone()">Fjern deltakelse</button>
         </div>
-        <div id="rosterList" class="roster-list"></div>
       </div>
 
       <div class="card" style="grid-column:1/-1">
@@ -174,6 +182,9 @@
 
       <div class="card">
         <h3 style="margin-top:0">Hurtighandlinger</h3>
+        <div class="row" style="justify-content:flex-end;margin-bottom:8px">
+          <button class="btn ghost" onclick="repeatLast()">Gjenta forrige</button>
+        </div>
         <div id="players" class="player-list"></div>
       </div>
 
@@ -293,33 +304,33 @@
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxZW7x8lC4mxIy0ubb4f1HUvEd9Qw6IPOI9mmT33wAE7FcyzUKZurxxuR-_i3RgWeLS/exec";
 
     const DEFAULT_ROSTER = [
-      { name:"Jacob", role:"Utespiller" },
-      { name:"Patrick F", role:"Målvakt" },
-      { name:"Jonas", role:"Utespiller" },
-      { name:"Mats", role:"Utespiller" },
-      { name:"Theodor", role:"Utespiller" },
-      { name:"Ulrik", role:"Målvakt" },
-      { name:"Loke", role:"Utespiller" },
-      { name:"Sebastian", role:"Utespiller" },
-      { name:"Mateo", role:"Utespiller" },
-      { name:"Markus", role:"Utespiller" },
-      { name:"Demyd", role:"Utespiller" },
-      { name:"Theo", role:"Målvakt" },
-      { name:"Stokka", role:"Utespiller" },
-      { name:"Fabian", role:"Utespiller" },
-      { name:"Nicolay", role:"Utespiller" },
-      { name:"Felix", role:"Utespiller" },
-      { name:"Ole", role:"Utespiller" },
-      { name:"Patrick W.", role:"Utespiller" },
-      { name:"Oskar", role:"Utespiller" },
-      { name:"Adrian A", role:"Utespiller" },
-      { name:"Adrian B", role:"Utespiller" }
+      { name:"Jacob", role:"Utespiller", star:false },
+      { name:"Patrick F", role:"Målvakt", star:false },
+      { name:"Jonas", role:"Utespiller", star:false },
+      { name:"Mats", role:"Utespiller", star:false },
+      { name:"Theodor", role:"Utespiller", star:false },
+      { name:"Ulrik", role:"Målvakt", star:false },
+      { name:"Loke", role:"Utespiller", star:false },
+      { name:"Sebastian", role:"Utespiller", star:false },
+      { name:"Mateo", role:"Utespiller", star:false },
+      { name:"Markus", role:"Utespiller", star:false },
+      { name:"Demyd", role:"Utespiller", star:false },
+      { name:"Theo", role:"Målvakt", star:false },
+      { name:"Stokka", role:"Utespiller", star:false },
+      { name:"Fabian", role:"Utespiller", star:false },
+      { name:"Nicolay", role:"Utespiller", star:false },
+      { name:"Felix", role:"Utespiller", star:false },
+      { name:"Ole", role:"Utespiller", star:false },
+      { name:"Patrick W.", role:"Utespiller", star:false },
+      { name:"Oskar", role:"Utespiller", star:false },
+      { name:"Adrian A", role:"Utespiller", star:false },
+      { name:"Adrian B", role:"Utespiller", star:false }
     ];
 
     // ======== TILSTAND ========
     const state = {
       metadata: { date: new Date().toISOString().slice(0,10), opponent: "", notes: "", competition: 'Annet', periodMinutes: 30 },
-      players: [], // {name, role: 'Utespiller'|'Målvakt', attending: true|false}
+      players: [], // {name, role: 'Utespiller'|'Målvakt', attending: true|false, star:boolean}
       attending: [],
       currentPeriod: 1,
       clock: { running:false, startMs:0, elapsedMs:0 },
@@ -330,35 +341,90 @@
       saveForm: { player:"", zone:null },
       editIndex: -1,
       editData: null,
+      lastZoneByPlayer: {},
+      orderGK: [],
+      orderFP: [],
+      soundOn: true,
+      hapticOn: true,
     };
 
-    const LS_KEY = 'handball_stats_no_v11';
+    const LS_KEY = 'handball_stats_no_v13';
 
     function $(id){ return document.getElementById(id); }
-
     function showToast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2500); }
+
+    // ======== SOUND / HAPTIC ========
+    function beep(type='short'){
+      if(!state.soundOn) return;
+      try{
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const o = ctx.createOscillator(); const g = ctx.createGain();
+        o.type = 'sine'; o.frequency.setValueAtTime(type==='short'? 880 : 440, ctx.currentTime);
+        g.gain.setValueAtTime(0.06, ctx.currentTime);
+        o.connect(g); g.connect(ctx.destination); o.start();
+        setTimeout(()=>{o.stop(); ctx.close();}, type==='short'? 90 : 160);
+      }catch{}
+    }
+    function vibrate(ms=20){ if(state.hapticOn && navigator.vibrate){ navigator.vibrate(ms); } }
+    function feedbackSuccess(){ beep('short'); vibrate(20); }
+    function feedbackMinor(){ beep('long'); vibrate(10); }
 
     // ======== OPPSETT / TROPP ========
     function init(){
-      state.players = DEFAULT_ROSTER.map(p => ({ name:p.name, role:p.role, attending:false }));
+      state.players = DEFAULT_ROSTER.map(p => ({ name:p.name, role:p.role, attending:false, star:false }));
+      state.orderGK = state.players.filter(p=>p.role==='Målvakt').map(p=>p.name).sort((a,b)=>a.localeCompare(b));
+      state.orderFP = state.players.filter(p=>p.role!=='Målvakt').map(p=>p.name).sort((a,b)=>a.localeCompare(b));
       renderRoster();
       restoreLocalIfAny();
       onCompetitionChange();
+      $('soundToggle').checked = state.soundOn; $('hapticToggle').checked = state.hapticOn;
+      $('soundToggle').addEventListener('change',()=>{ state.soundOn = $('soundToggle').checked; persistLocal(); });
+      $('hapticToggle').addEventListener('change',()=>{ state.hapticOn = $('hapticToggle').checked; persistLocal(); });
       console.log('Apps Script URL:', GOOGLE_SCRIPT_URL);
     }
 
+    function rosterSorted(){
+      const gk = state.orderGK.map(n=> state.players.find(p=>p.name===n)).filter(Boolean);
+      const fp = state.orderFP.map(n=> state.players.find(p=>p.name===n)).filter(Boolean);
+      // favorites first within each block
+      const sortStar = arr => { const fav = arr.filter(p=>p.star).sort((a,b)=>a.name.localeCompare(b.name)); const rest = arr.filter(p=>!p.star).sort((a,b)=>a.name.localeCompare(b.name)); return fav.concat(rest); };
+      return { gk: sortStar(gk), fp: sortStar(fp) };
+    }
+
     function renderRoster(){
-      const list = $('rosterList'); list.innerHTML = '';
-      state.players.forEach((p, idx) => {
+      const {gk, fp} = rosterSorted();
+      const gkList = $('gkList'); const fpList = $('fpList'); gkList.innerHTML=''; fpList.innerHTML='';
+      const renderItem = (p, container) => {
         const item = document.createElement('div'); item.className='badge' + (p.attending ? ' active' : '');
+        item.draggable = true; item.dataset.name = p.name; item.dataset.role = p.role; // drag data
         item.innerHTML = `
-          <div class="nm">${p.name}</div>
-          <div class="rl">${p.role}</div>
+          <div class="top">
+            <span class="nm">${p.name}</span>
+            <span class="star ${p.star? '': 'off'}" title="Favoritt" onclick="toggleStar('${p.name}')">★</span>
+          </div>
+          <div class="rl">${p.role} • Trykk for å merke</div>
         `;
         item.onclick = () => { p.attending = !p.attending; renderRoster(); persistLocal(); };
-        list.appendChild(item);
-      });
+        item.addEventListener('dragstart', onDragStart);
+        container.appendChild(item);
+      };
+      gk.forEach(p=> renderItem(p, gkList));
+      fp.forEach(p=> renderItem(p, fpList));
     }
+
+    function toggleStar(name){ const p = state.players.find(x=>x.name===name); if(!p) return; p.star = !p.star; renderRoster(); persistLocal(); }
+
+    // Drag & Drop within GK or FP blocks (GK stays on top overall)
+    let dragName = null; let dragRole = null; let dragOverContainer = null;
+    function onDragStart(e){ dragName = e.currentTarget.dataset.name; dragRole = e.currentTarget.dataset.role; e.dataTransfer.effectAllowed='move'; }
+    function onDragOver(e){ e.preventDefault(); dragOverContainer = e.currentTarget; e.dataTransfer.dropEffect='move'; }
+    function onDrop(e){ e.preventDefault(); if(!dragName || !dragOverContainer) return; const role = dragOverContainer.id==='gkList' ? 'Målvakt' : 'Utespiller'; if(role !== dragRole) { showToast('Kan ikke flytte mellom GK og utespillere.'); return; }
+      const names = Array.from(dragOverContainer.querySelectorAll('.badge')).map(el=> el.dataset.name);
+      // Move dragged name to end; then recompute order from DOM
+      const idx = names.indexOf(dragName); if(idx>-1){ names.splice(idx,1); }
+      names.push(dragName);
+      if(role==='Målvakt') state.orderGK = names; else state.orderFP = names;
+      renderRoster(); persistLocal(); }
 
     function markFieldPlayersAttending(){ state.players.forEach(p=>{ if(p.role==='Utespiller') p.attending=true; }); renderRoster(); persistLocal(); }
     function selectNone(){ state.players.forEach(p=> p.attending=false ); renderRoster(); persistLocal(); }
@@ -389,12 +455,15 @@
 
     function fullReset(){
       state.metadata = { date: new Date().toISOString().slice(0,10), opponent: "", notes: "", competition: 'Annet', periodMinutes: 30 };
-      state.players = DEFAULT_ROSTER.map(p => ({ name:p.name, role:p.role, attending:false }));
+      state.players = DEFAULT_ROSTER.map(p => ({ name:p.name, role:p.role, attending:false, star:false }));
+      state.orderGK = state.players.filter(p=>p.role==='Målvakt').map(p=>p.name).sort((a,b)=>a.localeCompare(b));
+      state.orderFP = state.players.filter(p=>p.role!=='Målvakt').map(p=>p.name).sort((a,b)=>a.localeCompare(b));
       state.attending = [];
       state.currentPeriod = 1;
       state.clock = { running:false, startMs:0, elapsedMs:0 };
       state.periodStarted = {1:false,2:false};
       state.events = [];
+      state.lastZoneByPlayer = {};
       $('competition').value = 'Annet';
       $('opponent').value = '';
       $('notes').value = '';
@@ -409,10 +478,10 @@
     let _tickHandle = null;
     function toggleClock(){
       if(state.clock.running){
-        state.clock.running=false; clearInterval(_tickHandle); _tickHandle=null;
+        state.clock.running=false; clearInterval(_tickHandle); _tickHandle=null; feedbackMinor();
         $('btnStart').textContent='Start'; $('btnStart').classList.add('success');
       } else {
-        state.clock.running=true; state.clock.startMs = Date.now() - state.clock.elapsedMs; _tickHandle = setInterval(tick, 250);
+        state.clock.running=true; state.clock.startMs = Date.now() - state.clock.elapsedMs; _tickHandle = setInterval(tick, 250); feedbackMinor();
         $('btnStart').textContent='Stopp'; $('btnStart').classList.remove('success');
         state.periodStarted[state.currentPeriod] = true;
       }
@@ -427,157 +496,131 @@
 
     function endPeriod(){
       if(state.currentPeriod === 1){
-        state.currentPeriod = 2; $('periodLabel').textContent = '2';
+        state.currentPeriod = 2; $('periodLabel').textContent = '2'; feedbackMinor();
         state.clock = {running:false,startMs:0,elapsedMs:0}; clearInterval(_tickHandle); _tickHandle=null;
         $('btnStart').textContent='Start'; $('btnStart').classList.add('success');
         openHalftimeModal();
       } else {
-        state.clock.running=false; clearInterval(_tickHandle); _tickHandle=null; updateClockUI();
+        state.clock.running=false; clearInterval(_tickHandle); _tickHandle=null; updateClockUI(); feedbackMinor();
         alert('2. omgang er slutt. Du kan fortsatt se/oppsummere og sende inn kampen.');
       }
       persistLocal();
     }
 
     // ======== SPILLERE & HANDLINGER ========
+    function sortedAttending(){
+      const {gk, fp} = rosterSorted();
+      const agk = gk.filter(p=>p.attending);
+      const afp = fp.filter(p=>p.attending);
+      return agk.concat(afp);
+    }
+
     function renderPlayers(){
       const container = $('players'); container.innerHTML = '';
-      const attending = state.players.filter(p=>p.attending);
+      const attending = sortedAttending();
       attending.forEach(p => {
         const div = document.createElement('div'); div.className='player';
+        // (3) condensed strips per role
+        let actions = '';
+        if(p.role==='Målvakt'){
+          actions = `
+            <button class=\"btn success\" onclick=\"if(ensurePeriodStarted()) openSaveModal('${p.name}')\">Redning</button>
+            <button class=\"btn danger\" onclick=\"if(ensurePeriodStarted()) openConcedeModal('${p.name}')\">Mål</button>
+            <button class=\"btn ghost\" onclick=\"toggleStar('${p.name}')\">${p.star? '★ Favoritt' : '☆ Favoritt'}</button>
+          `;
+        } else {
+          actions = `
+            <button class=\"btn success\" onclick=\"if(ensurePeriodStarted()) openGoalModal('${p.name}')\">Mål</button>
+            <button class=\"btn warn\" onclick=\"if(ensurePeriodStarted()) addEventTrigger('${p.name}','Utespiller','Bom')\">Bom</button>
+            <button class=\"btn danger\" onclick=\"if(ensurePeriodStarted()) addEventTrigger('${p.name}','Utespiller','Teknisk')\">Teknisk</button>
+          `;
+        }
         div.innerHTML = `
           <h4>${p.name}</h4>
-          <div class="role">${p.role}</div>
-          <div class="actions">${actionsHtml(p)}</div>
+          <div class=\"role\">${p.role}</div>
+          <div class=\"actions\">${actions}</div>
         `; container.appendChild(div);
       });
     }
 
-    function actionsHtml(p){
-      if(p.role === 'Målvakt'){
-        return `
-          <button class="btn success wide" onclick="if(ensurePeriodStarted()) openSaveModal('${p.name}')">Redning</button>
-          <button class="btn danger wide" onclick="if(ensurePeriodStarted()) openConcedeModal('${p.name}')">Mål</button>
-        `;
-      }
-      return `
-        <button class="btn success" onclick="if(ensurePeriodStarted()) openGoalModal('${p.name}')">Mål</button>
-        <button class="btn warn" onclick="if(ensurePeriodStarted()) addEvent('${p.name}','Utespiller','Bom')">Bom</button>
-        <button class="btn danger" onclick="if(ensurePeriodStarted()) addEvent('${p.name}','Utespiller','Teknisk')">Teknisk</button>
-      `;
-    }
+    function addEventTrigger(player, role, type){ addEvent(player, role, type); feedbackSuccess(); }
 
     // ======== HENDELSER ========
     function addEvent(player, role, type, assist='', zone=''){
       const ev = { period: state.currentPeriod, time: nowClock(), player, role, type, assist, zone };
-      state.events.push(ev); renderEvents(); persistLocal();
-    }
+      state.events.push(ev); renderEvents(); persistLocal(); }
     function renderEvents(){ const body = $('eventsBody'); body.innerHTML=''; state.events.forEach((ev, i) => { const tr = document.createElement('tr'); tr.innerHTML = `
-          <td class="small muted">${i+1}</td>
+          <td class=\"small muted\">${i+1}</td>
           <td>${ev.period}</td>
           <td>${ev.time}</td>
           <td>${ev.player}</td>
-          <td class="small muted">${ev.role}</td>
+          <td class=\"small muted\">${ev.role}</td>
           <td>${ev.type}</td>
           <td>${ev.assist||''}</td>
           <td>${ev.zone||''}</td>
           <td>
-            <button class="btn ghost" onclick="openEdit(${i})">Rediger</button>
-            <button class="btn ghost" onclick="deleteEvent(${i})">Slett</button>
+            <button class=\"btn ghost\" onclick=\"openEdit(${i})\">Rediger</button>
+            <button class=\"btn ghost\" onclick=\"deleteEvent(${i})\">Slett</button>
           </td>
         `; body.appendChild(tr); }); updateKPIs(); }
     function updateKPIs(){ const goals = state.events.filter(e=>e.type==='Mål' && e.role==='Utespiller').length; const assists = state.events.filter(e=>e.assist).length; const miss = state.events.filter(e=>e.type==='Bom').length; const saves = state.events.filter(e=>e.type==='Redning').length; const conceded = state.events.filter(e=>e.type==='Baklengsmål' || (e.type==='Mål' && e.role==='Målvakt')).length; $('kpiGoals').textContent = goals; $('kpiAssists').textContent = assists; $('kpiMiss').textContent = miss; $('kpiSaves').textContent = saves; $('kpiConceded').textContent = conceded; $('kpiEvents').textContent = state.events.length; }
     function undoLast(){ state.events.pop(); renderEvents(); persistLocal(); }
     function deleteEvent(i){ if(!confirm('Slette denne hendelsen?')) return; state.events.splice(i,1); renderEvents(); persistLocal(); }
+    function repeatLast(){ if(state.events.length===0) return; const last = state.events[state.events.length-1]; addEvent(last.player, last.role, last.type, last.assist||'', last.zone||''); feedbackSuccess(); }
 
-    // ======== SONEPICKER (SVG FLATER) ========
+    // ======== SONEPICKER ========
     function zoneSVG(selected){
       const selClass = (z) => (selected == z ? ' selected' : '');
       return `
-      <svg class="zone" viewBox="0 0 554 327" xmlns="http://www.w3.org/2000/svg" aria-label="Skuddsoner">
-        <rect class="court" x="0" y="0" width="554" height="327" rx="12"/>
-        <path class="goal" d="M140,0 H414 V60 A277,277 0 0 1 140,60 Z"/>
-        <path class="six" d="M170,0 H384 V80 A235,235 0 0 1 170,80 Z"/>
-        <path class="redline" d="M200,120 Q277,100 354,120"/>
-        <path class="nine" d="M120,0 H434 V130 A277,277 0 0 1 120,130 Z"/>
-        <!-- Approximate polygonal areas for zones 1..8 -->
-        <!-- Top band (near goal) split into 5 -->
-        <polygon class="area z1${selClass(1)}" data-zone="1" points="0,0 140,0 200,120 80,150 0,120"/>
-        <polygon class="area z2${selClass(2)}" data-zone="2" points="140,0 220,0 260,110 200,120"/>
-        <polygon class="area z3${selClass(3)}" data-zone="3" points="220,0 334,0 294,110 260,110"/>
-        <polygon class="area z4${selClass(4)}" data-zone="4" points="334,0 414,0 354,120 294,110"/>
-        <polygon class="area z5${selClass(5)}" data-zone="5" points="414,0 554,0 554,120 474,150 354,120"/>
-        <!-- Bottom band split into 3 -->
-        <polygon class="area z6${selClass(6)}" data-zone="6" points="0,120 200,120 160,220 0,260"/>
-        <polygon class="area z7${selClass(7)}" data-zone="7" points="200,120 354,120 330,240 224,260"/>
-        <polygon class="area z8${selClass(8)}" data-zone="8" points="354,120 554,120 554,260 394,220"/>
-        <!-- Labels -->
-        <text class="num" x="65" y="90">1</text>
-        <text class="num" x="205" y="80">2</text>
-        <text class="num" x="277" y="80">3</text>
-        <text class="num" x="349" y="80">4</text>
-        <text class="num" x="489" y="90">5</text>
-        <text class="num" x="140" y="220">6</text>
-        <text class="num" x="277" y="240">7</text>
-        <text class="num" x="414" y="220">8</text>
+      <svg class=\"zone\" viewBox=\"0 0 554 327\" xmlns=\"http://www.w3.org/2000/svg\" aria-label=\"Skuddsoner\">
+        <rect class=\"court\" x=\"0\" y=\"0\" width=\"554\" height=\"327\" rx=\"12\"/>
+        <path class=\"goal\" d=\"M160,0 H394 V90 C394,90 320,140 277,140 234,140 160,90 160,90 Z\"/>
+        <path class=\"goalbox\" d=\"M140,0 V120 M414,0 V120\"/>
+        <path class=\"nine\" d=\"M120,120 A277,277 0 0 0 434,120\"/>
+        <path class=\"six\" d=\"M230,145 Q277,135 324,145\"/>
+        <polygon class=\"area z1${selClass(1)}\" data-zone=\"1\" points=\"0,60 120,120 120,220 0,220\"/>
+        <polygon class=\"area z5${selClass(5)}\" data-zone=\"5\" points=\"434,120 554,60 554,220 434,220\"/>
+        <polygon class=\"area z2${selClass(2)}\" data-zone=\"2\" points=\"160,90 220,105 220,160 160,160\"/>
+        <polygon class=\"area z3${selClass(3)}\" data-zone=\"3\" points=\"220,105 334,105 334,170 220,170\"/>
+        <polygon class=\"area z4${selClass(4)}\" data-zone=\"4\" points=\"334,105 394,90 394,160 334,170\"/>
+        <polygon class=\"area z6${selClass(6)}\" data-zone=\"6\" points=\"0,220 200,220 200,327 0,327\"/>
+        <polygon class=\"area z7${selClass(7)}\" data-zone=\"7\" points=\"200,220 354,220 354,327 200,327\"/>
+        <polygon class=\"area z8${selClass(8)}\" data-zone=\"8\" points=\"354,220 554,220 554,327 354,327\"/>
+        <text class=\"num\" x=\"65\" y=\"110\">1</text>
+        <text class=\"num\" x=\"230\" y=\"120\">2</text>
+        <text class=\"num\" x=\"277\" y=\"130\">3</text>
+        <text class=\"num\" x=\"324\" y=\"120\">4</text>
+        <text class=\"num\" x=\"489\" y=\"110\">5</text>
+        <text class=\"num\" x=\"140\" y=\"270\">6</text>
+        <text class=\"num\" x=\"277\" y=\"280\">7</text>
+        <text class=\"num\" x=\"414\" y=\"270\">8</text>
       </svg>`;
     }
-
-    function renderZonePicker(targetId, selected, onSelect){
-      const tgt = $(targetId); tgt.innerHTML = zoneSVG(selected);
-      tgt.querySelectorAll('[data-zone]').forEach(el=>{
-        el.addEventListener('click', () => {
-          const z = parseInt(el.dataset.zone,10);
-          onSelect(z);
-          // update selection class
-          tgt.querySelectorAll('.area').forEach(a=>a.classList.remove('selected'));
-          const chosen = tgt.querySelector(`[data-zone="${z}"]`);
-          if(chosen) chosen.classList.add('selected');
-        });
-      });
-    }
+    function renderZonePicker(targetId, selected, onSelect){ const tgt = $(targetId); tgt.innerHTML = zoneSVG(selected); tgt.querySelectorAll('[data-zone]').forEach(el=>{ el.addEventListener('click', () => { const z = parseInt(el.dataset.zone,10); onSelect(z); tgt.querySelectorAll('.area').forEach(a=>a.classList.remove('selected')); const chosen = tgt.querySelector(`[data-zone="${z}"]`); if(chosen) chosen.classList.add('selected'); feedbackSuccess(); }); }); }
 
     // ======== MÅL (Utespiller): SONE → ASSIST ========
-    function openGoalModal(player){ state.goalForm = { player, zone:null, assist:"" }; $('goalWho').textContent = `${player} – Utespiller`; renderZonePicker('goalZone', null, (z)=>{ state.goalForm.zone=z; renderAssistList(); }); renderAssistList(); $('goalModal').style.display='flex'; }
+    function openGoalModal(player){ state.goalForm = { player, zone: state.lastZoneByPlayer[player] || null, assist:"" }; $('goalWho').textContent = `${player} – Utespiller`; renderZonePicker('goalZone', state.goalForm.zone, (z)=>{ state.goalForm.zone=z; renderAssistList(); }); renderAssistList(); $('goalModal').style.display='flex'; }
     function renderAssistList(){ const list = $('assistList'); list.innerHTML = ''; const scorer = state.goalForm.player; const attending = state.players.filter(p=>p.attending && p.name!==scorer); const noneBtn = document.createElement('button'); noneBtn.className='btn ghost'; noneBtn.textContent = 'Ingen assist'; noneBtn.style.margin='0 0 8px 0'; noneBtn.onclick = () => { state.goalForm.assist=''; confirmGoal(); }; if(!state.goalForm.zone){ noneBtn.disabled = true; } list.appendChild(noneBtn); attending.forEach(p=>{ const b = document.createElement('button'); b.className='btn'; b.style.display='block'; b.style.width='100%'; b.style.margin='4px 0'; b.textContent = p.name; b.onclick = () => { state.goalForm.assist=p.name; confirmGoal(); }; if(!state.goalForm.zone){ b.disabled = true; } list.appendChild(b); }); }
     function closeGoalModal(){ $('goalModal').style.display='none'; }
-    function confirmGoal(){ const g = state.goalForm; addEvent(g.player,'Utespiller','Mål',g.assist||'',String(g.zone||'')); closeGoalModal(); }
+    function confirmGoal(){ const g = state.goalForm; addEvent(g.player,'Utespiller','Mål',g.assist||'',String(g.zone||'')); state.lastZoneByPlayer[g.player] = g.zone; feedbackSuccess(); closeGoalModal(); }
 
     // ======== MÅL (imot) – Målvakt ========
-    function openConcedeModal(player){ state.concedeForm = { player, zone:null }; $('concedeWho').textContent = `${player} – Målvakt`; renderZonePicker('concedeZone', null, (z)=>{ state.concedeForm.zone=z; confirmConcede(); }); $('concedeModal').style.display='flex'; }
+    function openConcedeModal(player){ state.concedeForm = { player, zone: state.lastZoneByPlayer[player] || null }; $('concedeWho').textContent = `${player} – Målvakt`; renderZonePicker('concedeZone', state.concedeForm.zone, (z)=>{ state.concedeForm.zone=z; confirmConcede(); }); $('concedeModal').style.display='flex'; }
     function closeConcedeModal(){ $('concedeModal').style.display='none'; }
-    function confirmConcede(){ const c = state.concedeForm; addEvent(c.player,'Målvakt','Baklengsmål','',String(c.zone||'')); closeConcedeModal(); }
+    function confirmConcede(){ const c = state.concedeForm; addEvent(c.player,'Målvakt','Baklengsmål','',String(c.zone||'')); state.lastZoneByPlayer[c.player] = c.zone; feedbackSuccess(); closeConcedeModal(); }
 
     // ======== REDNING – Målvakt ========
-    function openSaveModal(player){ state.saveForm = { player, zone:null }; $('saveWho').textContent = `${player} – Målvakt`; renderZonePicker('saveZone', null, (z)=>{ state.saveForm.zone=z; confirmSave(); }); $('saveModal').style.display='flex'; }
+    function openSaveModal(player){ state.saveForm = { player, zone: state.lastZoneByPlayer[player] || null }; $('saveWho').textContent = `${player} – Målvakt`; renderZonePicker('saveZone', state.saveForm.zone, (z)=>{ state.saveForm.zone=z; confirmSave(); }); $('saveModal').style.display='flex'; }
     function closeSaveModal(){ $('saveModal').style.display='none'; }
-    function confirmSave(){ const s = state.saveForm; addEvent(s.player,'Målvakt','Redning','',String(s.zone||'')); closeSaveModal(); }
+    function confirmSave(){ const s = state.saveForm; addEvent(s.player,'Målvakt','Redning','',String(s.zone||'')); state.lastZoneByPlayer[s.player] = s.zone; feedbackSuccess(); closeSaveModal(); }
 
     // ======== PAUSEOPPSUMMERING ========
-    function openHalftimeModal(){ const grid = $('halftimeGrid'); grid.innerHTML=''; const our = Array(9).fill(0); const opp = Array(9).fill(0); state.events.filter(e=>e.period===1).forEach(e=>{ const z = parseInt(e.zone||'0',10); if(!z||z<1||z>8) return; if(e.type==='Mål' && e.role==='Utespiller') our[z]++; if(e.type==='Baklengsmål') opp[z]++; }); for(let z=1; z<=8; z++){ const d = document.createElement('div'); d.className='summary-item'; d.innerHTML = `<div class="zone">Sone ${z}</div><div class="val">Våre: ${our[z]}<br/>Baklengs: ${opp[z]}</div>`; grid.appendChild(d);} $('halftimeModal').style.display='flex'; }
+    function openHalftimeModal(){ const grid = $('halftimeGrid'); grid.innerHTML=''; const our = Array(9).fill(0); const opp = Array(9).fill(0); state.events.filter(e=>e.period===1).forEach(e=>{ const z = parseInt(e.zone||'0',10); if(!z||z<1||z>8) return; if(e.type==='Mål' && e.role==='Utespiller') our[z]++; if(e.type==='Baklengsmål') opp[z]++; }); for(let z=1; z<=8; z++){ const d = document.createElement('div'); d.className='summary-item'; d.innerHTML = `<div class=\"zone\">Sone ${z}</div><div class=\"val\">Våre: ${our[z]}<br/>Baklengs: ${opp[z]}</div>`; grid.appendChild(d);} $('halftimeModal').style.display='flex'; }
     function closeHalftimeModal(){ $('halftimeModal').style.display='none'; }
-
-    // ======== REDIGER HENDELSE ========
-    function openEdit(i){ state.editIndex = i; const ev = {...state.events[i]}; state.editData = ev; // build form
-      const pSel = $('editPeriod'); pSel.innerHTML=''; [1,2].forEach(n=>{ const o=document.createElement('option'); o.value=String(n); o.textContent=String(n); if(n===ev.period) o.selected=true; pSel.appendChild(o); });
-      $('editTime').value = ev.time;
-      const plSel = $('editPlayer'); plSel.innerHTML=''; state.players.forEach(p=>{ const o=document.createElement('option'); o.value=p.name; o.textContent=p.name; if(p.name===ev.player) o.selected=true; plSel.appendChild(o); });
-      const role = (state.players.find(p=>p.name===plSel.value)||{role:ev.role}).role; $('editRole').value = role;
-      const typeSel = $('editType'); typeSel.innerHTML='';
-        const types = (role==='Målvakt') ? ['Redning','Baklengsmål'] : ['Mål','Bom','Teknisk'];
-        types.forEach(t=>{ const o=document.createElement('option'); o.value=t; o.textContent=t; if(t===ev.type) o.selected=true; typeSel.appendChild(o); });
-      const aSel = $('editAssist'); aSel.innerHTML=''; const none = document.createElement('option'); none.value=''; none.textContent='(ingen)'; aSel.appendChild(none);
-        state.players.filter(p=>p.attending && p.name!==plSel.value).forEach(p=>{ const o=document.createElement('option'); o.value=p.name; o.textContent=p.name; if(p.name===ev.assist) o.selected=true; aSel.appendChild(o); });
-      renderZonePicker('editZone', parseInt(ev.zone||'0',10)||null, (z)=>{ state.editData.zone=String(z); });
-      plSel.onchange = ()=>{ const r=(state.players.find(p=>p.name===plSel.value)||{role:'Utespiller'}).role; $('editRole').value=r; const tps=(r==='Målvakt')?['Redning','Baklengsmål']:['Mål','Bom','Teknisk']; typeSel.innerHTML=''; tps.forEach(t=>{ const o=document.createElement('option'); o.value=t; o.textContent=t; typeSel.appendChild(o); }); buildAssist(); };
-      function buildAssist(){ aSel.innerHTML=''; const none = document.createElement('option'); none.value=''; none.textContent='(ingen)'; aSel.appendChild(none); state.players.filter(p=>p.attending && p.name!==plSel.value).forEach(p=>{ const o=document.createElement('option'); o.value=p.name; o.textContent=p.name; aSel.appendChild(o); }); }
-      $('editModal').style.display='flex';
-    }
-    function closeEditModal(){ $('editModal').style.display='none'; state.editIndex=-1; state.editData=null; }
-    function saveEditedEvent(){ if(state.editIndex<0) return; const i=state.editIndex; const ev = {...state.events[i]}; ev.period = parseInt($('editPeriod').value,10)||ev.period; ev.time = $('editTime').value.trim()||ev.time; const newPlayer = $('editPlayer').value; ev.player = newPlayer; ev.role = (state.players.find(p=>p.name===newPlayer)||{role:ev.role}).role; ev.type = $('editType').value; ev.assist = $('editAssist').value; const zEl = $('editZone'); const sel = zEl.querySelector('.area.selected'); ev.zone = sel ? sel.getAttribute('data-zone') : ev.zone; state.events[i]=ev; closeEditModal(); renderEvents(); persistLocal(); }
 
     // ======== LOKAL LAGRING ========
     function persistLocal(){ localStorage.setItem(LS_KEY, JSON.stringify({ state })); }
-    function restoreLocalIfAny(){ const raw = localStorage.getItem(LS_KEY); if(!raw) return; try{ const snap = JSON.parse(raw); if(snap && snap.state){ Object.assign(state, snap.state); } }catch{}; $('opponent').value = state.metadata.opponent||''; $('notes').value = state.metadata.notes||''; $('competition').value = state.metadata.competition||'Annet'; $('periodMinutes').value = state.metadata.periodMinutes||30; renderRoster(); }
+    function restoreLocalIfAny(){ const raw = localStorage.getItem(LS_KEY); if(!raw) return; try{ const snap = JSON.parse(raw); if(snap && snap.state){ Object.assign(state, snap.state); } }catch{}; $('opponent').value = state.metadata.opponent||''; $('notes').value = state.metadata.notes||''; $('competition').value = state.metadata.competition||'Annet'; $('periodMinutes').value = state.metadata.periodMinutes||30; $('soundToggle').checked = state.soundOn; $('hapticToggle').checked = state.hapticOn; renderRoster(); }
     function loadFromLocal(){ restoreLocalIfAny(); alert('Lastet inn lagret kampdata.'); }
     function clearLocal(){ localStorage.removeItem(LS_KEY); alert('Tømt lagrede kampdata lokalt.'); }
 
@@ -585,7 +628,7 @@
     function downloadCSV(){ const header = ['Dato','Motstander','Konkurranse','Merknader','Omgang','Tid','Spiller','Rolle','Hendelse','Assist','Sone']; const rows = state.events.map(ev=>[ state.metadata.date, state.metadata.opponent||'', state.metadata.competition||'', state.metadata.notes||'', ev.period, ev.time, ev.player, ev.role, ev.type, ev.assist||'', ev.zone||'' ]); const csv = [header].concat(rows).map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n'); const blob = new Blob([csv], {type:'text/csv'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `handball_stats_${state.metadata.date}.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
 
     // ======== INNSENDING TIL GOOGLE SHEETS ========
-    async function submitToSheets(){ if(!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.length < 10){ alert('Konfigurer GOOGLE_SCRIPT_URL øverst i filen.'); return; } if(state.events.length === 0){ alert('Ingen hendelser å sende.'); return; } const payload = { metadata: { date: state.metadata.date, opponent: state.metadata.opponent||'', competition: state.metadata.competition||'', notes: state.metadata.notes||'', periodMinutes: state.metadata.periodMinutes }, players: state.players, events: state.events, gameId: `${state.metadata.date}_${Date.now()}` }; try{ const body = new URLSearchParams({ data: JSON.stringify(payload) }).toString(); const res = await fetch(GOOGLE_SCRIPT_URL, { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body }); if(!res.ok){ throw new Error('Nettverksfeil'); } let msg = 'Sendt til Google-ark.'; try{ const j = await res.json(); if(j && j.status==='ok' && j.rowsAppended){ msg += ` Rader lagt til: ${j.rowsAppended}`; } }catch{} showToast(msg); fullReset(); } catch(err){ console.error(err); alert('Innsendingsfeil. Sjekk internett og at Web App-URL (/exec) er satt til “Alle”.'); } }
+    async function submitToSheets(){ if(!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.length < 10){ alert('Konfigurer GOOGLE_SCRIPT_URL øverst i filen.'); return; } if(state.events.length === 0){ alert('Ingen hendelser å sende.'); return; } const payload = { metadata: { date: state.metadata.date, opponent: state.metadata.opponent||'', competition: state.metadata.competition||'', notes: state.metadata.notes||'', periodMinutes: state.metadata.periodMinutes }, players: state.players, events: state.events, gameId: `${state.metadata.date}_${Date.now()}` }; try{ const body = new URLSearchParams({ data: JSON.stringify(payload) }).toString(); const res = await fetch(GOOGLE_SCRIPT_URL, { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body }); if(!res.ok){ throw new Error('Nettverksfeil'); } let msg = 'Sendt til Google-ark.'; try{ const j = await res.json(); if(j && j.status==='ok' && j.rowsAppended){ msg += ` Rader lagt til: ${j.rowsAppended}`; } }catch{} showToast(msg); feedbackSuccess(); fullReset(); } catch(err){ console.error(err); alert('Innsendingsfeil. Sjekk internett og at Web App-URL (/exec) er satt til “Alle”.'); } }
 
     // Boot
     init();
