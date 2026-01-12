@@ -64,8 +64,8 @@
     .zone-wrap{width:100%}
     svg.zone{width:100%;height:auto;border-radius:20px;background:#7bb7da}
     .goal{fill:#0d4166}
-    .nine{fill:none;stroke:#ffffff;stroke-dasharray:8 6;opacity:.9}
-    .six{fill:none;stroke:#b11c4a;stroke-width:3}
+    .nine{fill:none;stroke:#ffffff;stroke-dasharray:8 6;opacity:.9;vector-effect:non-scaling-stroke}
+    .six{fill:none;stroke:#b11c4a;stroke-width:3;vector-effect:non-scaling-stroke}
     .numbtn circle{fill:rgba(0,0,0,0);stroke:rgba(0,0,0,0)}
     .numbtn:hover circle{fill:rgba(76,201,240,.12)}
     .numbtn.selected circle{fill:rgba(76,201,240,.55);stroke:var(--accent);stroke-width:2.5}
@@ -193,7 +193,7 @@
           <div class="small muted">Data lagres lokalt til du sender inn.</div>
           <div class="row">
             <button class="btn" onclick="goBackToSetup()">Tilbake til oppsett</button>
-            <button class="btn primary" onclick="submitToSheets()">Send inn kamp → Google-ark</button>
+            <button id="submitBtn" class="btn primary" onclick="submitToSheets()">Send inn kamp → Google-ark</button>
           </div>
         </div>
       </div>
@@ -230,6 +230,7 @@
       <div id="goalZone" class="zone-wrap" style="margin-bottom:8px"></div>
       <div class="section-title">Assist – valgfritt</div>
       <div id="assistList" class="list"></div>
+      <div id="assistHint" class="small muted" style="margin-top:6px;display:none">Ingen favoritter er markert for assist. Trykk ★ på spillerkortet for å velge assist‑kandidater.</div>
       <div class="row" style="justify-content:flex-end;margin-top:10px">
         <button class="btn" onclick="closeGoalModal()">Lukk</button>
       </div>
@@ -334,7 +335,7 @@
       { name:'Oskar', role:'Utespiller', star:false, attending:false },
       { name:'Adrian A', role:'Utespiller', star:false, attending:false },
       { name:'Adrian B', role:'Utespiller', star:false, attending:false } ];
-    const LS_KEY = 'handball_stats_no_v22d';
+    const LS_KEY = 'handball_stats_no_v22e';
 
     const state = {
       metadata: { date: new Date().toISOString().slice(0,10), opponent: '', notes: '', competition: 'Annet', periodMinutes: 30 },
@@ -350,6 +351,7 @@
       lastZoneByPlayer: {},
       editIndex: -1,
       editZone: null,
+      submitting: false,
     };
 
     const $ = (id)=> document.getElementById(id);
@@ -406,20 +408,20 @@
 
     // ===== Inline zone SVG =====
     function zoneSVG(selected){ const sel=(z)=> (String(selected)==String(z) ? ' selected' : ''); return `
-      <svg class="zone" viewBox="0 0 776 464" xmlns="http://www.w3.org/2000/svg" aria-label="Skuddsoner">
+      <svg class="zone" viewBox="0 0 776 464" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" aria-label="Skuddsoner">
         <rect x="0" y="0" width="776" height="464" rx="20" fill="#7bb7da"/>
         <path class="goal" d="M200,0 H576 V140 C576,140 500,230 388,230 276,230 200,140 200,140 Z"/>
-        <path class="nine" d="M70,180 A470,470 0 0 0 706,180"/>
-        <path class="six" d="M310,240 Q388,220 466,240"/>
-        ${numBtn(1, 110,190, sel(1))}
-        ${numBtn(2, 320,220, sel(2))}
-        ${numBtn(3, 388,230, sel(3))}
-        ${numBtn(4, 456,220, sel(4))}
-        ${numBtn(5, 666,190, sel(5))}
-        ${numBtn(6, 220,320, sel(6))}
-        ${numBtn(7, 388,360, sel(7))}
-        ${numBtn(8, 556,320, sel(8))}
-        ${textBtn('7m', 388,100, sel('7m'))}
+        <path class="nine" d="M70,185 A470,470 0 0 0 706,185"/>
+        <path class="six" d="M300,245 Q388,220 476,245"/>
+        ${numBtn(1, 96,180, sel(1))}
+        ${numBtn(2, 288,220, sel(2))}
+        ${numBtn(3, 388,240, sel(3))}
+        ${numBtn(4, 488,220, sel(4))}
+        ${numBtn(5, 680,180, sel(5))}
+        ${numBtn(6, 232,320, sel(6))}
+        ${numBtn(7, 388,355, sel(7))}
+        ${numBtn(8, 544,320, sel(8))}
+        ${textBtn('7m', 388,110, sel('7m'))}
       </svg>`; }
     function numBtn(n,x,y,cls){ return `<g class="numbtn${cls}" data-zone="${n}"><circle cx="${x}" cy="${y}" r="22"></circle><text x="${x}" y="${y}">${n}</text></g>`; }
     function textBtn(label,x,y,cls){ return `<g class="numbtn${cls}" data-zone="${label}"><circle cx="${x}" cy="${y}" r="22"></circle><text x="${x}" y="${y}">${label}</text></g>`; }
@@ -428,7 +430,11 @@
 
     // ===== Goal / Miss / Concede / Save =====
     function openGoalModal(player){ state.goalForm = { player, zone: state.lastZoneByPlayer[player] || null, assist:'' }; $('goalWho').textContent = `${player}`; renderZonePicker('goalZone', state.goalForm.zone, (z)=>{ state.goalForm.zone=z; renderAssistList(); }); renderAssistList(); $('goalModal').style.display='flex'; }
-    function renderAssistList(){ const list=$('assistList'); list.innerHTML=''; const scorer=state.goalForm.player; const attending=state.players.filter(p=>p.attending && p.name!==scorer); const noneBtn=document.createElement('button'); noneBtn.className='btn ghost'; noneBtn.textContent='Ingen assist'; noneBtn.style.margin='0 0 8px 0'; noneBtn.onclick=()=>{ state.goalForm.assist=''; confirmGoal(); }; if(!state.goalForm.zone){ noneBtn.disabled=true; } list.appendChild(noneBtn); attending.forEach(p=>{ const b=document.createElement('button'); b.className='btn'; b.style.display='block'; b.style.width='100%'; b.style.margin='4px 0'; b.textContent=p.name; b.onclick=()=>{ state.goalForm.assist=p.name; confirmGoal(); }; if(!state.goalForm.zone){ b.disabled=true; } list.appendChild(b); }); }
+    function renderAssistList(){ const list=$('assistList'); const hint=$('assistHint'); list.innerHTML=''; const scorer=state.goalForm.player; // only starred & attending & not scorer
+      const candidates = state.players.filter(p=>p.attending && p.star && p.name!==scorer);
+      hint.style.display = candidates.length? 'none':'block';
+      const noneBtn=document.createElement('button'); noneBtn.className='btn ghost'; noneBtn.textContent='Ingen assist'; noneBtn.style.margin='0 0 8px 0'; noneBtn.onclick=()=>{ state.goalForm.assist=''; confirmGoal(); }; noneBtn.disabled = !state.goalForm.zone; list.appendChild(noneBtn);
+      candidates.forEach(p=>{ const b=document.createElement('button'); b.className='btn'; b.style.display='block'; b.style.width='100%'; b.style.margin='4px 0'; b.textContent=p.name; b.onclick=()=>{ state.goalForm.assist=p.name; confirmGoal(); }; b.disabled = !state.goalForm.zone; list.appendChild(b); }); }
     function closeGoalModal(){ $('goalModal').style.display='none'; }
     function confirmGoal(){ const g=state.goalForm; addEvent(g.player,'Utespiller','Mål',g.assist||'',String(g.zone||'')); state.lastZoneByPlayer[g.player]=g.zone; closeGoalModal(); }
 
@@ -445,80 +451,17 @@
     function confirmSave(){ const s=state.saveForm; addEvent(s.player,'Målvakt','Redning','',String(s.zone||'')); state.lastZoneByPlayer[s.player]=s.zone; closeSaveModal(); }
 
     // ===== Edit modal logic =====
-    function openEdit(i){ state.editIndex=i; const ev=state.events[i]; // Period
-      const pSel=$('editPeriod'); pSel.innerHTML='<option value="1">1</option><option value="2">2</option>'; pSel.value=String(ev.period);
-      // Time
-      $('editTime').value=ev.time;
-      // Players
-      const plSel=$('editPlayer'); plSel.innerHTML = state.players.map(p=>`<option value="${p.name}">${p.name}</option>`).join(''); plSel.value=ev.player;
-      // Role based on selected player
-      const role = (state.players.find(p=>p.name===plSel.value)||{role:ev.role}).role; $('editRole').value=role;
-      // Type
-      buildTypeOptions(role, ev.type);
-      // Assist
-      buildAssistOptions(plSel.value, ev.assist, $('editType').value);
-      // Zone
-      state.editZone = ev.zone || null; renderZonePicker('editZone', state.editZone, z=>{ state.editZone=z; });
-      // Handlers
-      plSel.onchange = ()=>{ const r=(state.players.find(p=>p.name===plSel.value)||{role:'Utespiller'}).role; $('editRole').value=r; buildTypeOptions(r, (r==='Utespiller'?'Mål':'Redning')); buildAssistOptions(plSel.value, '', $('editType').value); };
-      $('editType').onchange = ()=>{ buildAssistOptions(plSel.value, ev.assist, $('editType').value); };
-      $('editModal').style.display='flex'; }
+    function openEdit(i){ state.editIndex=i; const ev=state.events[i]; const pSel=$('editPeriod'); pSel.innerHTML='<option value="1">1</option><option value="2">2</option>'; pSel.value=String(ev.period); $('editTime').value=ev.time; const plSel=$('editPlayer'); plSel.innerHTML = state.players.map(p=>`<option value="${p.name}">${p.name}</option>`).join(''); plSel.value=ev.player; const role=(state.players.find(p=>p.name===plSel.value)||{role:ev.role}).role; $('editRole').value=role; buildTypeOptions(role, ev.type); buildAssistOptions(plSel.value, ev.assist, $('editType').value); state.editZone = ev.zone || null; renderZonePicker('editZone', state.editZone, z=>{ state.editZone=z; }); plSel.onchange=()=>{ const r=(state.players.find(p=>p.name===plSel.value)||{role:'Utespiller'}).role; $('editRole').value=r; buildTypeOptions(r, (r==='Utespiller'?'Mål':'Redning')); buildAssistOptions(plSel.value, '', $('editType').value); }; $('editType').onchange=()=>{ buildAssistOptions(plSel.value, ev.assist, $('editType').value); }; $('editModal').style.display='flex'; }
 
     function buildTypeOptions(role, current){ const tSel=$('editType'); if(role==='Målvakt'){ tSel.innerHTML = ['Redning','Baklengsmål'].map(t=>`<option value="${t}">${t}</option>`).join(''); } else { tSel.innerHTML = ['Mål','Bom','Teknisk'].map(t=>`<option value="${t}">${t}</option>`).join(''); } tSel.value=current; }
-
-    function buildAssistOptions(playerName, currentAssist, currentType){ const aSel=$('editAssist'); const others = state.players.filter(p=>p.attending && p.name!==playerName); let opts = `<option value="">Ingen</option>`; opts += others.map(p=>`<option value="${p.name}">${p.name}</option>`).join(''); aSel.innerHTML=opts; aSel.value = currentAssist||''; // Only enable for field goals
-      aSel.disabled = !( $('editRole').value==='Utespiller' && currentType==='Mål' ); }
-
+    function buildAssistOptions(playerName, currentAssist, currentType){ const aSel=$('editAssist'); const others = state.players.filter(p=>p.attending && p.star && p.name!==playerName); let opts = `<option value="">Ingen</option>`; opts += others.map(p=>`<option value="${p.name}">${p.name}</option>`).join(''); aSel.innerHTML=opts; aSel.value = currentAssist||''; aSel.disabled = !( $('editRole').value==='Utespiller' && currentType==='Mål' ); }
     function closeEditModal(){ $('editModal').style.display='none'; state.editIndex=-1; state.editZone=null; }
-
-    function saveEditedEvent(){ const i=state.editIndex; if(i<0) return; const ev=state.events[i]; const period = parseInt($('editPeriod').value,10)||ev.period; const time = $('editTime').value||ev.time; const player = $('editPlayer').value||ev.player; const role = $('editRole').value||ev.role; const type = $('editType').value||ev.type; const assist = $('editAssist').disabled? '' : $('editAssist').value; const zone = String(state.editZone||''); state.events[i] = { period, time, player, role, type, assist, zone }; closeEditModal(); renderEvents(); persistLocal(); }
+    function saveEditedEvent(){ const i=state.editIndex; if(i<0) return; const ev=state.events[i]; const period=parseInt($('editPeriod').value,10)||ev.period; const time=$('editTime').value||ev.time; const player=$('editPlayer').value||ev.player; const role=$('editRole').value||ev.role; const type=$('editType').value||ev.type; const assist=$('editAssist').disabled? '' : $('editAssist').value; const zone=String(state.editZone||''); state.events[i] = { period, time, player, role, type, assist, zone }; closeEditModal(); renderEvents(); persistLocal(); }
 
     // ===== Summary =====
     function openSummary(){ $('summaryModal').style.display='flex'; renderSummary(); }
     function closeSummary(){ $('summaryModal').style.display='none'; }
-    function renderSummary(){
-      const periodSel = $('summaryPeriod').value; const zones = ['1','2','3','4','5','6','7','8','7m'];
-      const ourGoals = Object.fromEntries(zones.map(z=>[z,0]));
-      const ourMiss  = Object.fromEntries(zones.map(z=>[z,0]));
-      const oppConceded = Object.fromEntries(zones.map(z=>[z,0]));
-      const oppSaved    = Object.fromEntries(zones.map(z=>[z,0]));
-      const periodFilter = (e)=> periodSel==='all' ? true : e.period===parseInt(periodSel,10);
-
-      state.events.filter(periodFilter).forEach(e=>{
-        const z = String(e.zone||''); if(!zones.includes(z)) return;
-        if(e.role==='Utespiller'){
-          if(e.type==='Mål') ourGoals[z]++;
-          if(e.type==='Bom') ourMiss[z]++;
-        } else if(e.role==='Målvakt'){
-          if(e.type==='Baklengsmål' || e.type==='Mål') oppConceded[z]++;
-          if(e.type==='Redning') oppSaved[z]++;
-        }
-      });
-
-      const totOurGoals = Object.values(ourGoals).reduce((a,b)=>a+b,0);
-      const totOurShots = Object.keys(ourGoals).reduce((sum,z)=> sum + ourGoals[z] + ourMiss[z], 0);
-      const ourConv = totOurShots>0 ? Math.round(100*totOurGoals/totOurShots) : 0;
-      const totOppConceded = Object.values(oppConceded).reduce((a,b)=>a+b,0);
-      const totOppShots = Object.keys(oppConceded).reduce((sum,z)=> sum + oppConceded[z] + oppSaved[z], 0);
-      const oppConv = totOppShots>0 ? Math.round(100*totOppConceded/totOppShots) : 0;
-
-      const body = $('summaryBody'); body.innerHTML='';
-      const header = document.createElement('div'); header.innerHTML = `<div class="row" style="justify-content:space-between"><div class="pill">Våre: ${totOurGoals}/${totOurShots} (${ourConv}%)</div><div class="pill">Motstander: ${totOppConceded}/${totOppShots} (${oppConv}%)</div></div>`; body.appendChild(header);
-
-      const grid = document.createElement('div'); grid.style.display='grid'; grid.style.gridTemplateColumns='repeat(3,1fr)'; grid.style.gap='10px';
-      ['1','2','3','4','5','6','7','8','7m'].forEach(z=>{
-        const oShots = ourGoals[z] + ourMiss[z]; const oConv = oShots>0 ? Math.round(100*ourGoals[z]/oShots) : 0;
-        const pShots = oppConceded[z] + oppSaved[z]; const pConv = pShots>0 ? Math.round(100*oppConceded[z]/pShots) : 0;
-        const card = document.createElement('div'); card.className='card'; card.style.padding='10px';
-        card.innerHTML = `<div style="font-weight:700;margin-bottom:6px">Sone ${z}</div>
-          <div class="small muted">Våre: ${ourGoals[z]}/${oShots} (${oConv}%)</div>
-          <div class="bar"><span style="width:${oConv}%"></span></div>
-          <div class="small muted" style="margin-top:6px">Motstander: ${oppConceded[z]}/${pShots} (${pConv}%)</div>
-          <div class="bar bad"><span style="width:${pConv}%"></span></div>`;
-        grid.appendChild(card);
-      });
-      body.appendChild(grid);
-    }
+    function renderSummary(){ const periodSel=$('summaryPeriod').value; const zones=['1','2','3','4','5','6','7','8','7m']; const ourGoals=Object.fromEntries(zones.map(z=>[z,0])); const ourMiss=Object.fromEntries(zones.map(z=>[z,0])); const oppConceded=Object.fromEntries(zones.map(z=>[z,0])); const oppSaved=Object.fromEntries(zones.map(z=>[z,0])); const periodFilter=(e)=> periodSel==='all' ? true : e.period===parseInt(periodSel,10); state.events.filter(periodFilter).forEach(e=>{ const z=String(e.zone||''); if(!zones.includes(z)) return; if(e.role==='Utespiller'){ if(e.type==='Mål') ourGoals[z]++; if(e.type==='Bom') ourMiss[z]++; } else if(e.role==='Målvakt'){ if(e.type==='Baklengsmål' || e.type==='Mål') oppConceded[z]++; if(e.type==='Redning') oppSaved[z]++; } }); const totOurGoals=Object.values(ourGoals).reduce((a,b)=>a+b,0); const totOurShots=zones.reduce((s,z)=>s+ourGoals[z]+ourMiss[z],0); const ourConv=totOurShots>0?Math.round(100*totOurGoals/totOurShots):0; const totOppConceded=Object.values(oppConceded).reduce((a,b)=>a+b,0); const totOppShots=zones.reduce((s,z)=>s+oppConceded[z]+oppSaved[z],0); const oppConv=totOppShots>0?Math.round(100*totOppConceded/totOppShots):0; const body=$('summaryBody'); body.innerHTML=''; const hdr=document.createElement('div'); hdr.innerHTML = `<div class="row" style="justify-content:space-between"><div class="pill">Våre: ${totOurGoals}/${totOurShots} (${ourConv}%)</div><div class="pill">Motstander: ${totOppConceded}/${totOppShots} (${oppConv}%)</div></div>`; body.appendChild(hdr); const grid=document.createElement('div'); grid.style.display='grid'; grid.style.gridTemplateColumns='repeat(3,1fr)'; grid.style.gap='10px'; zones.forEach(z=>{ const oShots=ourGoals[z]+ourMiss[z]; const oConv=oShots>0?Math.round(100*ourGoals[z]/oShots):0; const pShots=oppConceded[z]+oppSaved[z]; const pConv=pShots>0?Math.round(100*oppConceded[z]/pShots):0; const card=document.createElement('div'); card.className='card'; card.style.padding='10px'; card.innerHTML = `<div style="font-weight:700;margin-bottom:6px">Sone ${z}</div><div class="small muted">Våre: ${ourGoals[z]}/${oShots} (${oConv}%)</div><div class="bar"><span style="width:${oConv}%"></span></div><div class="small muted" style="margin-top:6px">Motstander: ${oppConceded[z]}/${pShots} (${pConv}%)</div><div class="bar bad"><span style="width:${pConv}%"></span></div>`; grid.appendChild(card); }); body.appendChild(grid); }
 
     // ===== Storage & CSV =====
     function persistLocal(){ localStorage.setItem(LS_KEY, JSON.stringify({ state })); }
@@ -526,7 +469,20 @@
     function loadFromLocal(){ restoreLocalIfAny(); renderRoster(); alert('Lastet inn lagret kampdata.'); }
     function clearLocal(){ localStorage.removeItem(LS_KEY); alert('Tømt lagrede kampdata lokalt.'); }
 
-    function downloadCSV(){ const header=['Dato','Motstander','Konkurranse','Merknader','Omgang','Tid','Spiller','Rolle','Hendelse','Assist','Sone']; const rows=state.events.map(ev=>[ state.metadata.date, state.metadata.opponent||'', state.metadata.competition||'', state.metadata.notes||'', ev.period, ev.time, ev.player, ev.role, ev.type, ev.assist||'', ev.zone||'' ]); const csv=[header].concat(rows).map(r=>r.map(x=>`"${String(x).replace(/\"/g,'\"\"')}"`).join(',')).join('\n'); const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`handball_stats_${state.metadata.date}.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
+    // ===== Submit to Google Apps Script =====
+    async function submitToSheets(){ try{
+        if(!GOOGLE_SCRIPT_URL){ alert('Mangler Google-URL.'); return; }
+        if(state.submitting) return; state.submitting=true; const btn=$('submitBtn'); if(btn){ btn.disabled=true; btn.textContent='Sender...'; }
+        const payload = { metadata: state.metadata, players: state.players, events: state.events };
+        const res = await fetch(GOOGLE_SCRIPT_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+        let data=null; try{ data = await res.json(); } catch{ /* some Apps Script return text */ }
+        if(res.ok && (data==null || data.ok===true || data.result==='success')){ showToast('Kamp sendt!'); clearLocal(); }
+        else { const msg = (data && (data.error||data.message)) || `HTTP ${res.status}`; alert('Kunne ikke sende inn: '+msg); }
+      } catch(err){ console.error(err); alert('Nettverksfeil: '+err); }
+      finally { state.submitting=false; const btn=$('submitBtn'); if(btn){ btn.disabled=false; btn.textContent='Send inn kamp → Google-ark'; } }
+    }
+
+    function showToast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 2500); }
 
     // Boot
     init();
