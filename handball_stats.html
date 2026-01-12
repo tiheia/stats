@@ -1,10 +1,10 @@
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="no">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Handball Game Stats – Simple Tracker</title>
+  <title>Håndball – Enkel kampstatistikk</title>
   <style>
     :root{
       --bg:#0b1220; --panel:#121a2b; --accent:#4cc9f0; --accent2:#c77dff;
@@ -44,13 +44,13 @@
     .small{font-size:12px}
     .sticky-footer{position:sticky;bottom:0;left:0;right:0;background:linear-gradient(180deg,rgba(11,18,32,0),var(--bg) 25%);padding:12px 0;margin-top:8px}
 
-    /* Modals */
+    /* Modaler */
     .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.5);z-index:1000}
     .modal .content{width:min(600px,92vw);background:var(--panel);border:1px solid #1f2a44;border-radius:12px;padding:12px}
     .modal .list{max-height:42vh;overflow:auto}
     .section-title{margin:8px 0 6px;color:var(--muted);font-size:13px}
 
-    /* Zone SVG styles */
+    /* Sone-SVG */
     .zone-wrap{width:100%;}
     svg.zone{width:100%;height:auto;border-radius:12px;background:#7bb7da}
     .zone .court{fill:#76b6d8; pointer-events:none}
@@ -64,7 +64,13 @@
     .zone .hit:hover{fill:rgba(76,201,240,.15)}
     .zone .hit.active{fill:rgba(76,201,240,.35);stroke:var(--accent);stroke-width:2}
 
-    /* Mobile-friendly roster */
+    /* Pauseoppsummering */
+    .summary-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:6px}
+    .summary-item{background:#0e1833;border:1px solid #1f2a44;border-radius:10px;padding:8px;text-align:center}
+    .summary-item .zone{font-size:12px;color:#9fb3c8}
+    .summary-item .val{font-size:18px;font-weight:800}
+
+    /* Mobilvennlig tropp */
     .roster-list{display:grid;gap:8px}
     .roster-item{display:grid;gap:6px;padding:10px;border:1px solid #1f2a44;border-radius:12px;background:#0e1833}
     .roster-item .top{display:flex;gap:8px;align-items:center;justify-content:space-between}
@@ -77,192 +83,205 @@
 </head>
 <body>
   <header>
-    <h1>Handball Game Stats – Simple Tracker</h1>
+    <h1>Håndball – Enkel kampstatistikk</h1>
   </header>
   <main>
-    <!-- PRE-GAME SETUP -->
+    <!-- FØR KAMP -->
     <section id="setup" class="grid grid-2">
       <div class="card">
-        <h2 style="margin-top:0">1) Game details</h2>
-        <label>Competition
+        <h2 style="margin-top:0">1) Kampdetaljer</h2>
+        <label>Konkurranse
           <select id="competition" onchange="onCompetitionChange()">
             <option value="Regional">Regional</option>
             <option value="Lokal">Lokal</option>
             <option value="Annet" selected>Annet</option>
           </select>
         </label>
-        <label>Opponent (optional)
-          <input id="opponent" type="text" placeholder="Opponent name" />
+        <label>Motstander (valgfritt)
+          <input id="opponent" type="text" placeholder="Lag" />
         </label>
-        <label>Notes (optional)
-          <input id="notes" type="text" placeholder="League, friendly, etc." />
+        <label>Merknader (valgfritt)
+          <input id="notes" type="text" placeholder="Serie, treningskamp, osv." />
         </label>
         <div class="row" style="align-items:center;justify-content:space-between;margin-top:8px">
           <div style="flex:1">
-            <label>Period length (minutes)
+            <label>Periodelengde (minutter)
               <input id="periodMinutes" type="number" min="1" max="60" value="30" />
             </label>
-            <div class="small muted">Regional/Lokal: auto 25 min. Annet: choose freely.</div>
+            <div class="small muted">Regional/Lokal: automatisk 25 min. Annet: valgfritt.</div>
           </div>
           <div>
-            <span class="pill">Two periods</span>
+            <span class="pill">To omganger</span>
           </div>
         </div>
         <div class="row" style="margin-top:8px">
-          <button class="btn ghost" onclick="loadFromLocal()">Load last unsent game</button>
-          <button class="btn ghost" onclick="clearLocal()">Clear local</button>
+          <button class="btn ghost" onclick="loadFromLocal()">Last inn sist lagret</button>
+          <button class="btn ghost" onclick="clearLocal()">Tøm lokalt</button>
         </div>
       </div>
 
       <div class="card">
-        <h2 style="margin-top:0">2) Select attending players</h2>
+        <h2 style="margin-top:0">2) Velg spillere som deltar</h2>
         <div class="row" style="margin-bottom:8px">
-          <button class="btn success" onclick="markFieldPlayersAttending()">Mark all field players attending</button>
-          <button class="btn" onclick="selectNone()">Clear attending</button>
-          <button class="btn" onclick="addCustomPlayer()">+ Add player</button>
+          <button class="btn success" onclick="markFieldPlayersAttending()">Marker alle utespillere som deltar</button>
+          <button class="btn" onclick="selectNone()">Fjern deltakelse</button>
+          <button class="btn" onclick="addCustomPlayer()">+ Legg til spiller</button>
         </div>
         <div id="rosterList" class="roster-list"></div>
       </div>
 
       <div class="card" style="grid-column:1/-1">
-        <h2 style="margin-top:0">3) Start game</h2>
+        <h2 style="margin-top:0">3) Start kamp</h2>
         <div class="row">
-          <button class="btn primary" onclick="startGame()">Start Game (go to Period 1)</button>
+          <button class="btn primary" onclick="startGame()">Start kamp (til 1. omgang)</button>
         </div>
-        <p class="small muted">Tip: you can always come back to setup before submitting.</p>
+        <p class="small muted">Tips: du kan gå tilbake til oppsett før innsending.</p>
       </div>
     </section>
 
-    <!-- IN-GAME -->
+    <!-- UNDER KAMP -->
     <section id="ingame" style="display:none">
       <div class="grid grid-2">
         <div class="card">
           <div class="row" style="align-items:center;justify-content:space-between">
             <div>
-              <div class="pill">Period <span id="periodLabel">1</span> / 2</div>
+              <div class="pill">Omgang <span id="periodLabel">1</span> / 2</div>
               <div class="timer" id="clock">00:00</div>
-              <div class="small muted">Tap Start/Stop to control the clock. Events are time‑stamped.</div>
+              <div class="small muted">Trykk Start/Stopp for å styre klokken. Hendelser tidsstemples.</div>
             </div>
             <div class="grid" style="gap:8px;min-width:220px">
               <button id="btnStart" class="btn success" onclick="toggleClock()">Start</button>
-              <button class="btn warn" onclick="endPeriod()">End current period</button>
+              <button class="btn warn" onclick="endPeriod()">Avslutt omgang</button>
+              <button class="btn ghost" onclick="openHalftimeModal()">Vis pauseoppsummering</button>
             </div>
           </div>
         </div>
         <div class="card">
           <div class="kpi">
-            <div class="k"><div class="small muted">Goals</div><div id="kpiGoals" style="font-size:22px;font-weight:800">0</div></div>
-            <div class="k"><div class="small muted">Assists</div><div id="kpiAssists" style="font-size:22px;font-weight:800">0</div></div>
-            <div class="k"><div class="small muted">Misses</div><div id="kpiMiss" style="font-size:22px;font-weight:800">0</div></div>
-            <div class="k"><div class="small muted">Saves</div><div id="kpiSaves" style="font-size:22px;font-weight:800">0</div></div>
-            <div class="k"><div class="small muted">Conceded</div><div id="kpiConceded" style="font-size:22px;font-weight:800">0</div></div>
+            <div class="k"><div class="small muted">Mål</div><div id="kpiGoals" style="font-size:22px;font-weight:800">0</div></div>
+            <div class="k"><div class="small muted">Assist</div><div id="kpiAssists" style="font-size:22px;font-weight:800">0</div></div>
+            <div class="k"><div class="small muted">Bom</div><div id="kpiMiss" style="font-size:22px;font-weight:800">0</div></div>
+            <div class="k"><div class="small muted">Redning</div><div id="kpiSaves" style="font-size:22px;font-weight:800">0</div></div>
+            <div class="k"><div class="small muted">Baklengs</div><div id="kpiConceded" style="font-size:22px;font-weight:800">0</div></div>
           </div>
         </div>
       </div>
 
       <div class="card">
-        <h3 style="margin-top:0">Quick actions</h3>
+        <h3 style="margin-top:0">Hurtighandlinger</h3>
         <div id="players" class="player-list"></div>
       </div>
 
       <div class="card">
-        <h3 style="margin-top:0">Event log</h3>
+        <h3 style="margin-top:0">Hendelseslogg</h3>
         <div class="row" style="justify-content:flex-end;margin-bottom:8px">
-          <button class="btn ghost" onclick="undoLast()">Undo last</button>
-          <button class="btn ghost" onclick="downloadCSV()">Download CSV</button>
+          <button class="btn ghost" onclick="undoLast()">Angre siste</button>
+          <button class="btn ghost" onclick="downloadCSV()">Last ned CSV</button>
         </div>
         <div style="overflow:auto">
           <table>
             <thead>
               <tr>
                 <th>#</th>
-                <th>Period</th>
-                <th>Time</th>
-                <th>Player</th>
-                <th>Role</th>
-                <th>Event</th>
+                <th>Omgang</th>
+                <th>Tid</th>
+                <th>Spiller</th>
+                <th>Rolle</th>
+                <th>Hendelse</th>
                 <th>Assist</th>
-                <th>Zone</th>
+                <th>Sone</th>
               </tr>
             </thead>
             <tbody id="eventsBody"></tbody>
           </table>
         </div>
         <div class="sticky-footer row" style="justify-content:space-between">
-          <div class="small muted">Data is kept locally until you submit.</div>
+          <div class="small muted">Data lagres lokalt til du sender inn.</div>
           <div class="row">
-            <button class="btn" onclick="goBackToSetup()">Back to setup</button>
-            <button class="btn primary" onclick="submitToSheets()">Submit game → Google Sheet</button>
+            <button class="btn" onclick="goBackToSetup()">Tilbake til oppsett</button>
+            <button class="btn primary" onclick="submitToSheets()">Send inn kamp → Google-ark</button>
           </div>
         </div>
       </div>
     </section>
   </main>
 
-  <!-- Goal modal: Zone first, then Assist; selecting Assist auto-saves -->
-  <div id="goalModal" class="modal" role="dialog" aria-modal="true" aria-label="Record goal">
+  <!-- Mål (Utespiller): Sone → Assist (auto-lagring) -->
+  <div id="goalModal" class="modal" role="dialog" aria-modal="true" aria-label="Registrer mål">
     <div class="content">
-      <h3 style="margin-top:0">Record goal</h3>
+      <h3 style="margin-top:0">Registrer mål</h3>
       <div id="goalWho" class="small muted" style="margin-bottom:8px"></div>
-      <div class="section-title">Zone (tap on the court)</div>
+      <div class="section-title">Sone (trykk på banen)</div>
       <div id="goalZone" class="zone-wrap" style="margin-bottom:8px"></div>
-      <div class="section-title">Assist (optional)</div>
+      <div class="section-title">Assist (målgivende) – valgfritt</div>
       <div id="assistList" class="list"></div>
       <div class="row" style="justify-content:flex-end;margin-top:10px">
-        <button class="btn" onclick="closeGoalModal()">Close</button>
+        <button class="btn" onclick="closeGoalModal()">Lukk</button>
       </div>
     </div>
   </div>
 
-  <!-- Conceded modal (GK): auto-save on zone selection -->
-  <div id="concedeModal" class="modal" role="dialog" aria-modal="true" aria-label="Record conceded goal">
+  <!-- Baklengsmål (MV): auto-lagring ved sonevalg -->
+  <div id="concedeModal" class="modal" role="dialog" aria-modal="true" aria-label="Registrer baklengsmål">
     <div class="content">
-      <h3 style="margin-top:0">Record conceded goal</h3>
+      <h3 style="margin-top:0">Registrer baklengsmål</h3>
       <div id="concedeWho" class="small muted" style="margin-bottom:8px"></div>
-      <div class="section-title">Zone (tap on the court)</div>
+      <div class="section-title">Sone (trykk på banen)</div>
       <div id="concedeZone" class="zone-wrap"></div>
       <div class="row" style="justify-content:flex-end;margin-top:10px">
-        <button class="btn" onclick="closeConcedeModal()">Close</button>
+        <button class="btn" onclick="closeConcedeModal()">Lukk</button>
       </div>
     </div>
   </div>
 
-  <!-- Save modal (GK): auto-save on zone selection -->
-  <div id="saveModal" class="modal" role="dialog" aria-modal="true" aria-label="Record save zone">
+  <!-- Redning (MV): auto-lagring ved sonevalg -->
+  <div id="saveModal" class="modal" role="dialog" aria-modal="true" aria-label="Registrer redning">
     <div class="content">
-      <h3 style="margin-top:0">Record save (zone)</h3>
+      <h3 style="margin-top:0">Registrer redning (sone)</h3>
       <div id="saveWho" class="small muted" style="margin-bottom:8px"></div>
-      <div class="section-title">Zone (tap on the court)</div>
+      <div class="section-title">Sone (trykk på banen)</div>
       <div id="saveZone" class="zone-wrap"></div>
       <div class="row" style="justify-content:flex-end;margin-top:10px">
-        <button class="btn" onclick="closeSaveModal()">Close</button>
+        <button class="btn" onclick="closeSaveModal()">Lukk</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pauseoppsummering -->
+  <div id="halftimeModal" class="modal" role="dialog" aria-modal="true" aria-label="Pauseoppsummering">
+    <div class="content">
+      <h3 style="margin-top:0">Pauseoppsummering (1. omgang)</h3>
+      <div class="small muted">Fordeling per sone av våre mål og baklengsmål i 1. omgang.</div>
+      <div id="halftimeGrid" class="summary-grid" style="margin-top:8px"></div>
+      <div class="row" style="justify-content:flex-end;margin-top:10px">
+        <button class="btn" onclick="closeHalftimeModal()">Lukk</button>
       </div>
     </div>
   </div>
 
   <script>
-    // ======== CONFIG ========
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxZW7x8lC4mxIy0ubb4f1HUvEd9Qw6IPOI9mmT33wAE7FcyzUKZurxxuR-_i3RgWeLS/exec"; // provided URL
+    // ======== KONFIG ========
+    const GOOGLE_SCRIPT_URL = https://script.google.com/macros/s/AKfycbxZW7x8lC4mxIy0ubb4f1HUvEd9Qw6IPOI9mmT33wAE7FcyzUKZurxxuR-_i3RgWeLS/exec;
 
-    // Default roster with 3 goalkeepers
     const DEFAULT_ROSTER = [
-      { name:"Theo", role:"Goalkeeper" },
-      { name:"Ulrik", role:"Goalkeeper" },
-      { name:"Patrick F", role:"Goalkeeper" },
-      { name:"Per", role:"Field" },
-      { name:"Paal", role:"Field" },
-      { name:"Espen", role:"Field" },
-      { name:"Truls", role:"Field" },
-      { name:"Ole", role:"Field" }
+      { name:"Theo", role:"Målvakt" },
+      { name:"Ulrik", role:"Målvakt" },
+      { name:"Patrick F", role:"Målvakt" },
+      { name:"Per", role:"Utespiller" },
+      { name:"Paal", role:"Utespiller" },
+      { name:"Espen", role:"Utespiller" },
+      { name:"Truls", role:"Utespiller" },
+      { name:"Ole", role:"Utespiller" }
     ];
 
-    // ======== STATE ========
+    // ======== TILSTAND ========
     const state = {
       metadata: { date: new Date().toISOString().slice(0,10), opponent: "", notes: "", competition: 'Annet', periodMinutes: 30 },
-      players: [], // {name, role: 'Field'|'Goalkeeper', attending: true|false}
-      attending: [], // names
+      players: [], // {name, role: 'Utespiller'|'Målvakt', attending: true|false}
+      attending: [],
       currentPeriod: 1,
       clock: { running:false, startMs:0, elapsedMs:0 },
+      periodStarted: {1:false, 2:false},
       events: [], // {period, time, player, role, type, assist, zone}
       goalForm: { player:"", zone:null, assist:"" },
       concedeForm: { player:"", zone:null },
@@ -271,7 +290,7 @@
 
     function $(id){ return document.getElementById(id); }
 
-    // ======== SETUP ROSTER UI ========
+    // ======== OPPSETT / TROPP ========
     function init(){
       state.players = DEFAULT_ROSTER.map(p => ({ name:p.name, role:p.role, attending:false }));
       renderRoster();
@@ -281,18 +300,17 @@
     }
 
     function renderRoster(){
-      const list = $("rosterList");
-      list.innerHTML = '';
+      const list = $("rosterList"); list.innerHTML = '';
       state.players.forEach((p, idx) => {
         const item = document.createElement('div'); item.className='roster-item';
         item.innerHTML = `
           <div class="top">
             <input class="name-input" type="text" value="${p.name}" data-idx="${idx}" oninput="onRename(event)" />
-            <label class="toggle"><input type="checkbox" data-idx="${idx}" ${p.attending?'checked':''} onchange="onAttendToggle(event)" /> Attending</label>
+            <label class="toggle"><input type="checkbox" data-idx="${idx}" ${p.attending?'checked':''} onchange="onAttendToggle(event)" /> Deltar</label>
           </div>
           <div class="seg">
-            <button class="opt ${p.role==='Field'?'active':''}" data-idx="${idx}" data-role="Field" onclick="onRoleClick(event)" role="button">Field</button>
-            <button class="opt ${p.role==='Goalkeeper'?'active':''}" data-idx="${idx}" data-role="Goalkeeper" onclick="onRoleClick(event)" role="button">Goalkeeper</button>
+            <button class="opt ${p.role==='Utespiller'?'active':''}" data-idx="${idx}" data-role="Utespiller" onclick="onRoleClick(event)" role="button">Utespiller</button>
+            <button class="opt ${p.role==='Målvakt'?'active':''}" data-idx="${idx}" data-role="Målvakt" onclick="onRoleClick(event)" role="button">Målvakt</button>
           </div>
         `;
         list.appendChild(item);
@@ -302,55 +320,69 @@
     function onRename(e){ const i=+e.target.dataset.idx; state.players[i].name = e.target.value.trim(); persistLocal(); }
     function onAttendToggle(e){ const i=+e.target.dataset.idx; state.players[i].attending = e.target.checked; persistLocal(); }
     function onRoleClick(e){ const i=+e.target.dataset.idx; const r=e.target.dataset.role; state.players[i].role = r; renderRoster(); persistLocal(); }
-    function addCustomPlayer(){ state.players.push({name:"New Player", role:'Field', attending:true}); renderRoster(); persistLocal(); }
-    function markFieldPlayersAttending(){ state.players.forEach(p=>{ if(p.role==='Field') p.attending=true; }); renderRoster(); persistLocal(); }
+    function addCustomPlayer(){ state.players.push({name:"Ny spiller", role:'Utespiller', attending:true}); renderRoster(); persistLocal(); }
+    function markFieldPlayersAttending(){ state.players.forEach(p=>{ if(p.role==='Utespiller') p.attending=true; }); renderRoster(); persistLocal(); }
     function selectNone(){ state.players.forEach(p=> p.attending=false ); renderRoster(); persistLocal(); }
 
-    // ======== COMPETITION & PERIOD MINUTES ========
+    // ======== KONKURRANSE / PERIODELENGDE ========
     function onCompetitionChange(){
-      const compSel = $("competition");
-      const comp = compSel.value; state.metadata.competition = comp;
+      const compSel = $("competition"); const comp = compSel.value; state.metadata.competition = comp;
       const minutesInput = $("periodMinutes");
       if(comp === 'Regional' || comp === 'Lokal'){
         state.metadata.periodMinutes = 25; minutesInput.value = 25; minutesInput.disabled = true;
-      } else {
-        minutesInput.disabled = false; // allow manual for Annet
-      }
+      } else { minutesInput.disabled = false; }
       persistLocal();
     }
 
-    // ======== GAME FLOW ========
+    // ======== KAMPFLYT ========
     function startGame(){
       state.metadata.opponent = $("opponent").value.trim();
       state.metadata.notes = $("notes").value.trim();
       state.metadata.periodMinutes = Math.max(1, parseInt($("periodMinutes").value || String(state.metadata.periodMinutes), 10));
       state.attending = state.players.filter(p=>p.attending).map(p=>p.name);
-      if(state.attending.length === 0){ alert('Select at least one attending player.'); return; }
+      if(state.attending.length === 0){ alert('Velg minst én spiller som deltar.'); return; }
       $("setup").style.display='none'; $("ingame").style.display='block';
-      state.currentPeriod = 1; state.clock = {running:false,startMs:0,elapsedMs:0};
+      state.currentPeriod = 1; state.clock = {running:false,startMs:0,elapsedMs:0}; state.periodStarted = {1:false,2:false};
       $("periodLabel").textContent = '1'; updateClockUI(); renderPlayers(); renderEvents(); persistLocal();
     }
 
     function goBackToSetup(){ $("ingame").style.display='none'; $("setup").style.display='grid'; persistLocal(); }
 
-    // ======== CLOCK ========
+    // ======== KLOKKE ========
     let _tickHandle = null;
     function toggleClock(){
-      if(state.clock.running){ state.clock.running=false; clearInterval(_tickHandle); _tickHandle=null; $("btnStart").textContent='Start'; $("btnStart").classList.add('success'); }
-      else { state.clock.running=true; state.clock.startMs = Date.now() - state.clock.elapsedMs; _tickHandle = setInterval(tick, 250); $("btnStart").textContent='Stop'; $("btnStart").classList.remove('success'); }
+      if(state.clock.running){ // pause
+        state.clock.running=false; clearInterval(_tickHandle); _tickHandle=null;
+        $("btnStart").textContent='Start'; $("btnStart").classList.add('success');
+      } else { // start
+        state.clock.running=true; state.clock.startMs = Date.now() - state.clock.elapsedMs; _tickHandle = setInterval(tick, 250);
+        $("btnStart").textContent='Stopp'; $("btnStart").classList.remove('success');
+        // marker at klokken er startet i denne omgangen
+        state.periodStarted[state.currentPeriod] = true;
+      }
       persistLocal();
     }
     function tick(){ const periodMs = state.metadata.periodMinutes * 60 * 1000; state.clock.elapsedMs = Math.min(periodMs, Date.now() - state.clock.startMs); updateClockUI(); if(state.clock.elapsedMs >= periodMs){ endPeriod(); } }
     function updateClockUI(){ $("clock").textContent = millisToClock(state.clock.elapsedMs); }
     function millisToClock(ms){ const t=Math.floor(ms/1000), mm=String(Math.floor(t/60)).padStart(2,'0'), ss=String(t%60).padStart(2,'0'); return `${mm}:${ss}`; }
     function nowClock(){ return millisToClock(state.clock.elapsedMs); }
+
+    function ensurePeriodStarted(){ if(!state.periodStarted[state.currentPeriod]){ alert('Start klokken i denne omgangen før du registrerer hendelser.'); return false; } return true; }
+
     function endPeriod(){
-      if(state.currentPeriod === 1){ state.currentPeriod = 2; $("periodLabel").textContent = '2'; state.clock = {running:false,startMs:0,elapsedMs:0}; clearInterval(_tickHandle); _tickHandle=null; $("btnStart").textContent='Start'; $("btnStart").classList.add('success'); alert('Period 1 ended. Start Period 2 when ready.'); }
-      else { state.clock.running=false; clearInterval(_tickHandle); _tickHandle=null; updateClockUI(); alert('Period 2 ended. You can still add/edit events or submit the game.'); }
+      if(state.currentPeriod === 1){
+        state.currentPeriod = 2; $("periodLabel").textContent = '2';
+        state.clock = {running:false,startMs:0,elapsedMs:0}; clearInterval(_tickHandle); _tickHandle=null;
+        $("btnStart").textContent='Start'; $("btnStart").classList.add('success');
+        openHalftimeModal();
+      } else {
+        state.clock.running=false; clearInterval(_tickHandle); _tickHandle=null; updateClockUI();
+        alert('2. omgang er slutt. Du kan fortsatt se/oppsummere og sende inn kampen.');
+      }
       persistLocal();
     }
 
-    // ======== RENDER PLAYERS & ACTIONS ========
+    // ======== SPILLERE & HANDLINGER ========
     function renderPlayers(){
       const container = $("players"); container.innerHTML = '';
       const attending = state.players.filter(p=>p.attending);
@@ -365,20 +397,20 @@
     }
 
     function actionsHtml(p){
-      if(p.role === 'Goalkeeper'){
+      if(p.role === 'Målvakt'){
         return `
-          <button class="btn success wide" onclick="openSaveModal('${p.name}')">Save</button>
-          <button class="btn danger wide" onclick="openConcedeModal('${p.name}')">Goal Conceded</button>
+          <button class="btn success wide" onclick="if(ensurePeriodStarted()) openSaveModal('${p.name}')">Redning</button>
+          <button class="btn danger wide" onclick="if(ensurePeriodStarted()) openConcedeModal('${p.name}')">Baklengsmål</button>
         `;
       }
       return `
-        <button class="btn success" onclick="openGoalModal('${p.name}')">Goal</button>
-        <button class="btn warn" onclick="addEvent('${p.name}','Field','Miss')">Miss</button>
-        <button class="btn danger" onclick="addEvent('${p.name}','Field','Technical Foul')">Technical Foul</button>
+        <button class="btn success" onclick="if(ensurePeriodStarted()) openGoalModal('${p.name}')">Mål</button>
+        <button class="btn warn" onclick="if(ensurePeriodStarted()) addEvent('${p.name}','Utespiller','Bom')">Bom</button>
+        <button class="btn danger" onclick="if(ensurePeriodStarted()) addEvent('${p.name}','Utespiller','Teknisk feil')">Teknisk feil</button>
       `;
     }
 
-    // ======== EVENTS ========
+    // ======== HENDELSER ========
     function addEvent(player, role, type, assist='', zone=''){
       const ev = { period: state.currentPeriod, time: nowClock(), player, role, type, assist, zone };
       state.events.push(ev); renderEvents(); persistLocal();
@@ -393,14 +425,14 @@
           <td>${ev.assist||''}</td>
           <td>${ev.zone||''}</td>
         `; body.appendChild(tr); }); updateKPIs(); }
-    function updateKPIs(){ const goals = state.events.filter(e=>e.type==='Goal').length; const assists = state.events.filter(e=>e.assist).length; const miss = state.events.filter(e=>e.type==='Miss').length; const saves = state.events.filter(e=>e.type==='Save').length; const conceded = state.events.filter(e=>e.type==='Goal Conceded').length; $("kpiGoals").textContent = goals; $("kpiAssists").textContent = assists; $("kpiMiss").textContent = miss; $("kpiSaves").textContent = saves; $("kpiConceded").textContent = conceded; }
+    function updateKPIs(){ const goals = state.events.filter(e=>e.type==='Mål').length; const assists = state.events.filter(e=>e.assist).length; const miss = state.events.filter(e=>e.type==='Bom').length; const saves = state.events.filter(e=>e.type==='Redning').length; const conceded = state.events.filter(e=>e.type==='Baklengsmål').length; $("kpiGoals").textContent = goals; $("kpiAssists").textContent = assists; $("kpiMiss").textContent = miss; $("kpiSaves").textContent = saves; $("kpiConceded").textContent = conceded; }
     function undoLast(){ state.events.pop(); renderEvents(); persistLocal(); }
 
-    // ======== REUSABLE ZONE PICKER (SVG) ========
+    // ======== SONEPICKER (SVG) ========
     function zoneSVG(selected){
       const isSel = (z) => (selected == z ? ' active' : '');
       return `
-      <svg class="zone" viewBox="0 0 554 327" xmlns="http://www.w3.org/2000/svg" aria-label="Handball shooting zones">
+      <svg class="zone" viewBox="0 0 554 327" xmlns="http://www.w3.org/2000/svg" aria-label="Skuddsoner">
         <rect class="court" x="0" y="0" width="554" height="327" rx="12"/>
         <path class="goal" d="M140,0 H414 V60 A277,277 0 0 1 140,60 Z"/>
         <path class="six" d="M170,0 H384 V80 A235,235 0 0 1 170,80 Z"/>
@@ -428,77 +460,41 @@
         <circle class="hit${isSel(8)}" data-zone="8" cx="414" cy="220" r="38"/>
       </svg>`;
     }
+    function renderZonePicker(targetId, selected, onSelect){ const tgt = $(targetId); tgt.innerHTML = zoneSVG(selected); tgt.querySelectorAll('[data-zone]').forEach(el=>{ el.addEventListener('click', () => { onSelect(parseInt(el.dataset.zone,10)); }); }); }
 
-    function renderZonePicker(targetId, selected, onSelect){
-      const tgt = $(targetId); tgt.innerHTML = zoneSVG(selected);
-      tgt.querySelectorAll('[data-zone]').forEach(el=>{ el.addEventListener('click', () => { onSelect(parseInt(el.dataset.zone,10)); }); });
-    }
-
-    // ======== GOAL (FIELD): Zone -> Assist (auto-save) ========
-    function openGoalModal(player){
-      state.goalForm = { player, zone:null, assist:"" };
-      $("goalWho").textContent = `${player} – Field`;
-      renderZonePicker('goalZone', null, (z)=>{ state.goalForm.zone=z; renderAssistList(); });
-      renderAssistList();
-      $("goalModal").style.display='flex';
-    }
-
-    function renderAssistList(){
-      const list = $("assistList"); list.innerHTML = '';
-      const scorer = state.goalForm.player;
-      const attending = state.players.filter(p=>p.attending && p.name!==scorer);
-      const noneBtn = document.createElement('button');
-      noneBtn.className='btn ghost'; noneBtn.textContent = 'No assist'; noneBtn.style.margin='0 0 8px 0';
-      noneBtn.onclick = () => { state.goalForm.assist=''; confirmGoal(); };
-      if(!state.goalForm.zone){ noneBtn.disabled = true; }
-      list.appendChild(noneBtn);
-      attending.forEach(p=>{
-        const b = document.createElement('button'); b.className='btn'; b.style.display='block'; b.style.width='100%'; b.style.margin='4px 0';
-        b.textContent = p.name; b.onclick = () => { state.goalForm.assist=p.name; confirmGoal(); };
-        if(!state.goalForm.zone){ b.disabled = true; }
-        list.appendChild(b);
-      });
-    }
-
+    // ======== MÅL (UTESpiller): SONE → ASSIST ========
+    function openGoalModal(player){ state.goalForm = { player, zone:null, assist:"" }; $("goalWho").textContent = `${player} – Utespiller`; renderZonePicker('goalZone', null, (z)=>{ state.goalForm.zone=z; renderAssistList(); }); renderAssistList(); $("goalModal").style.display='flex'; }
+    function renderAssistList(){ const list = $("assistList"); list.innerHTML = ''; const scorer = state.goalForm.player; const attending = state.players.filter(p=>p.attending && p.name!==scorer); const noneBtn = document.createElement('button'); noneBtn.className='btn ghost'; noneBtn.textContent = 'Ingen assist'; noneBtn.style.margin='0 0 8px 0'; noneBtn.onclick = () => { state.goalForm.assist=''; confirmGoal(); }; if(!state.goalForm.zone){ noneBtn.disabled = true; } list.appendChild(noneBtn); attending.forEach(p=>{ const b = document.createElement('button'); b.className='btn'; b.style.display='block'; b.style.width='100%'; b.style.margin='4px 0'; b.textContent = p.name; b.onclick = () => { state.goalForm.assist=p.name; confirmGoal(); }; if(!state.goalForm.zone){ b.disabled = true; } list.appendChild(b); }); }
     function closeGoalModal(){ $("goalModal").style.display='none'; }
-    function confirmGoal(){ const g = state.goalForm; addEvent(g.player,'Field','Goal',g.assist||'',String(g.zone||'')); closeGoalModal(); }
+    function confirmGoal(){ const g = state.goalForm; addEvent(g.player,'Utespiller','Mål',g.assist||'',String(g.zone||'')); closeGoalModal(); }
 
-    // ======== CONCEDE (GOALKEEPER): auto-save on zone ========
-    function openConcedeModal(player){ state.concedeForm = { player, zone:null }; $("concedeWho").textContent = `${player} – Goalkeeper`; renderZonePicker('concedeZone', null, (z)=>{ state.concedeForm.zone=z; confirmConcede(); }); $("concedeModal").style.display='flex'; }
+    // ======== BAKLENGS (MV) ========
+    function openConcedeModal(player){ state.concedeForm = { player, zone:null }; $("concedeWho").textContent = `${player} – Målvakt`; renderZonePicker('concedeZone', null, (z)=>{ state.concedeForm.zone=z; confirmConcede(); }); $("concedeModal").style.display='flex'; }
     function closeConcedeModal(){ $("concedeModal").style.display='none'; }
-    function confirmConcede(){ const c = state.concedeForm; addEvent(c.player,'Goalkeeper','Goal Conceded','',String(c.zone||'')); closeConcedeModal(); }
+    function confirmConcede(){ const c = state.concedeForm; addEvent(c.player,'Målvakt','Baklengsmål','',String(c.zone||'')); closeConcedeModal(); }
 
-    // ======== SAVE (GOALKEEPER): auto-save on zone ========
-    function openSaveModal(player){ state.saveForm = { player, zone:null }; $("saveWho").textContent = `${player} – Goalkeeper`; renderZonePicker('saveZone', null, (z)=>{ state.saveForm.zone=z; confirmSave(); }); $("saveModal").style.display='flex'; }
+    // ======== REDNING (MV) ========
+    function openSaveModal(player){ state.saveForm = { player, zone:null }; $("saveWho").textContent = `${player} – Målvakt`; renderZonePicker('saveZone', null, (z)=>{ state.saveForm.zone=z; confirmSave(); }); $("saveModal").style.display='flex'; }
     function closeSaveModal(){ $("saveModal").style.display='none'; }
-    function confirmSave(){ const s = state.saveForm; addEvent(s.player,'Goalkeeper','Save','',String(s.zone||'')); closeSaveModal(); }
+    function confirmSave(){ const s = state.saveForm; addEvent(s.player,'Målvakt','Redning','',String(s.zone||'')); closeSaveModal(); }
 
-    // ======== LOCAL STORAGE ========
-    const LS_KEY = 'handball_stats_game_v7';
+    // ======== PAUSEOPPSUMMERING ========
+    function openHalftimeModal(){ const grid = $("halftimeGrid"); grid.innerHTML=''; const our = Array(9).fill(0); const opp = Array(9).fill(0); state.events.filter(e=>e.period===1).forEach(e=>{ const z = parseInt(e.zone||'0',10); if(!z||z<1||z>8) return; if(e.type==='Mål') our[z]++; if(e.type==='Baklengsmål') opp[z]++; }); for(let z=1; z<=8; z++){ const d = document.createElement('div'); d.className='summary-item'; d.innerHTML = `<div class="zone">Sone ${z}</div><div class="val">Våre: ${our[z]}<br/>Baklengs: ${opp[z]}</div>`; grid.appendChild(d);} $("halftimeModal").style.display='flex'; }
+    function closeHalftimeModal(){ $("halftimeModal").style.display='none'; }
+
+    // ======== LOKAL LAGRING ========
+    const LS_KEY = 'handball_stats_no_v8';
     function persistLocal(){ localStorage.setItem(LS_KEY, JSON.stringify({ state })); }
     function restoreLocalIfAny(){ const raw = localStorage.getItem(LS_KEY); if(!raw) return; try{ const snap = JSON.parse(raw); if(snap && snap.state){ Object.assign(state, snap.state); } }catch{}; $("opponent").value = state.metadata.opponent||''; $("notes").value = state.metadata.notes||''; $("competition").value = state.metadata.competition||'Annet'; $("periodMinutes").value = state.metadata.periodMinutes||30; renderRoster(); }
-    function loadFromLocal(){ restoreLocalIfAny(); alert('Loaded any saved game data from this device.'); }
-    function clearLocal(){ localStorage.removeItem(LS_KEY); alert('Cleared local saved data.'); }
+    function loadFromLocal(){ restoreLocalIfAny(); alert('Lastet inn lagret kampdata.'); }
+    function clearLocal(){ localStorage.removeItem(LS_KEY); alert('Tømt lagrede kampdata lokalt.'); }
 
-    // ======== CSV DOWNLOAD ========
-    function downloadCSV(){ const header = ['Date','Opponent','Competition','Notes','Period','Time','Player','Role','Event','Assist','Zone']; const rows = state.events.map(ev=>[ state.metadata.date, state.metadata.opponent||'', state.metadata.competition||'', state.metadata.notes||'', ev.period, ev.time, ev.player, ev.role, ev.type, ev.assist||'', ev.zone||'' ]); const csv = [header].concat(rows).map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n'); const blob = new Blob([csv], {type:'text/csv'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `handball_stats_${state.metadata.date}.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
+    // ======== CSV ========
+    function downloadCSV(){ const header = ['Dato','Motstander','Konkurranse','Merknader','Omgang','Tid','Spiller','Rolle','Hendelse','Assist','Sone']; const rows = state.events.map(ev=>[ state.metadata.date, state.metadata.opponent||'', state.metadata.competition||'', state.metadata.notes||'', ev.period, ev.time, ev.player, ev.role, ev.type, ev.assist||'', ev.zone||'' ]); const csv = [header].concat(rows).map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('
+'); const blob = new Blob([csv], {type:'text/csv'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `handball_stats_${state.metadata.date}.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
 
-    // ======== SUBMIT TO GOOGLE SHEETS (Apps Script Web App) ========
-    async function submitToSheets(){
-      if(!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.length < 10){ alert('Please configure GOOGLE_SCRIPT_URL at the top of the file.'); return; }
-      if(state.events.length === 0){ alert('No events to submit.'); return; }
-      const payload = { metadata: { date: state.metadata.date, opponent: state.metadata.opponent||'', competition: state.metadata.competition||'', notes: state.metadata.notes||'', periodMinutes: state.metadata.periodMinutes }, players: state.players, events: state.events, gameId: `${state.metadata.date}_${Date.now()}` };
-      try{
-        const body = new URLSearchParams({ data: JSON.stringify(payload) }).toString();
-        const res = await fetch(GOOGLE_SCRIPT_URL, { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body });
-        if(!res.ok){ throw new Error('Network error'); }
-        let msg = 'Submitted to Google Sheet.';
-        try{ const j = await res.json(); if(j && j.status==='ok' && j.rowsAppended){ msg += ` Rows appended: ${j.rowsAppended}`; } }catch{}
-        alert(msg);
-        localStorage.setItem(LS_KEY+"_backup", JSON.stringify({state}));
-        state.events = []; renderEvents(); persistLocal();
-      } catch(err){ console.error(err); alert('Submit failed. Check internet and that the Apps Script Web App is deployed as Anyone with /exec URL.'); }
-    }
+    // ======== INNSENDING TIL GOOGLE SHEETS ========
+    async function submitToSheets(){ if(!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.length < 10){ alert('Konfigurer GOOGLE_SCRIPT_URL øverst i filen.'); return; } if(state.events.length === 0){ alert('Ingen hendelser å sende.'); return; } const payload = { metadata: { date: state.metadata.date, opponent: state.metadata.opponent||'', competition: state.metadata.competition||'', notes: state.metadata.notes||'', periodMinutes: state.metadata.periodMinutes }, players: state.players, events: state.events, gameId: `${state.metadata.date}_${Date.now()}` }; try{ const body = new URLSearchParams({ data: JSON.stringify(payload) }).toString(); const res = await fetch(GOOGLE_SCRIPT_URL, { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body }); if(!res.ok){ throw new Error('Nettverksfeil'); } let msg = 'Sendt til Google-ark.'; try{ const j = await res.json(); if(j && j.status==='ok' && j.rowsAppended){ msg += ` Rader lagt til: ${j.rowsAppended}`; } }catch{} alert(msg); localStorage.setItem(LS_KEY+"_backup", JSON.stringify({state})); state.events = []; renderEvents(); persistLocal(); } catch(err){ console.error(err); alert('Innsendingsfeil. Sjekk internett og at Web App-URL (/exec) er satt til “Alle”.'); } }
 
     // Boot
     init();
