@@ -16,7 +16,7 @@
     h1{margin:0;font-size:20px}
     main{padding:16px;max-width:1100px;margin:auto}
     .grid{display:grid;gap:12px}
-    @media(min-width:800px){.grid-2{grid-template-columns:1fr 1fr}}
+    @media(min-width:860px){.grid-2{grid-template-columns:1fr 1fr}}
     .card{background:var(--panel);border:1px solid #1f2a44;border-radius:12px;padding:12px}
     label{display:block;margin:8px 0 6px;color:var(--muted);font-size:13px}
     input[type="text"],input[type="number"],select{width:100%;padding:10px 12px;border-radius:8px;border:1px solid #2a3a5c;background:#0f1730;color:var(--text)}
@@ -63,6 +63,16 @@
     .zone .hit{fill:rgba(76,201,240,0);cursor:pointer}
     .zone .hit:hover{fill:rgba(76,201,240,.15)}
     .zone .hit.active{fill:rgba(76,201,240,.35);stroke:var(--accent);stroke-width:2}
+
+    /* Mobile-friendly roster */
+    .roster-list{display:grid;gap:8px}
+    .roster-item{display:grid;gap:6px;padding:10px;border:1px solid #1f2a44;border-radius:12px;background:#0e1833}
+    .roster-item .top{display:flex;gap:8px;align-items:center;justify-content:space-between}
+    .name-input{flex:1;min-width:0}
+    .toggle{display:flex;align-items:center;gap:6px}
+    .seg{display:flex;gap:6px;flex-wrap:wrap}
+    .seg .opt{padding:6px 10px;border-radius:999px;border:1px solid #2a3a5c;background:#0f1730;color:#e6f1ff;cursor:pointer}
+    .seg .opt.active{border-color:var(--accent);box-shadow:0 0 0 2px rgba(76,201,240,.25) inset}
   </style>
 </head>
 <body>
@@ -74,17 +84,25 @@
     <section id="setup" class="grid grid-2">
       <div class="card">
         <h2 style="margin-top:0">1) Game details</h2>
+        <label>Competition
+          <select id="competition" onchange="onCompetitionChange()">
+            <option value="Regional">Regional</option>
+            <option value="Lokal">Lokal</option>
+            <option value="Annet" selected>Annet</option>
+          </select>
+        </label>
         <label>Opponent (optional)
           <input id="opponent" type="text" placeholder="Opponent name" />
         </label>
-        <label>Competition / Notes (optional)
+        <label>Notes (optional)
           <input id="notes" type="text" placeholder="League, friendly, etc." />
         </label>
         <div class="row" style="align-items:center;justify-content:space-between;margin-top:8px">
-          <div>
+          <div style="flex:1">
             <label>Period length (minutes)
               <input id="periodMinutes" type="number" min="1" max="60" value="30" />
             </label>
+            <div class="small muted">Regional/Lokal: auto 25 min. Annet: choose freely.</div>
           </div>
           <div>
             <span class="pill">Two periods</span>
@@ -95,13 +113,17 @@
           <button class="btn ghost" onclick="clearLocal()">Clear local</button>
         </div>
       </div>
+
       <div class="card">
         <h2 style="margin-top:0">2) Select attending players</h2>
-        <div id="rosterBox" class="grid" style="grid-template-columns:1fr 120px 120px;gap:6px"></div>
-        <div class="row" style="margin-top:8px">
+        <div class="row" style="margin-bottom:8px">
+          <button class="btn success" onclick="markFieldPlayersAttending()">Mark all field players attending</button>
+          <button class="btn" onclick="selectNone()">Clear attending</button>
           <button class="btn" onclick="addCustomPlayer()">+ Add player</button>
         </div>
+        <div id="rosterList" class="roster-list"></div>
       </div>
+
       <div class="card" style="grid-column:1/-1">
         <h2 style="margin-top:0">3) Start game</h2>
         <div class="row">
@@ -211,15 +233,24 @@
 
   <script>
     // ======== CONFIG ========
-    const GOOGLE_SCRIPT_URL = https://script.google.com/macros/s/AKfycbwPQ0IzRVjaplPdshstxsPV0ElUoYqvkF29YUHj8cgPb-Tmn-ucLN4SqNGDEsk0oQYSFQ/exec; // e.g., https://script.google.com/macros/s/AKfycbx.../exec
+    const GOOGLE_SCRIPT_URL = "PASTE_WEB_APP_URL_HERE"; // e.g., https://script.google.com/macros/s/AKfycbx.../exec
 
-    // Default roster
-    const DEFAULT_ROSTER = ["Per","Paal","Espen","Truls","Ole"];
+    // Default roster with 3 goalkeepers
+    const DEFAULT_ROSTER = [
+      { name:"Theo", role:"Goalkeeper" },
+      { name:"Ulrik", role:"Goalkeeper" },
+      { name:"Patrick F", role:"Goalkeeper" },
+      { name:"Per", role:"Field" },
+      { name:"Paal", role:"Field" },
+      { name:"Espen", role:"Field" },
+      { name:"Truls", role:"Field" },
+      { name:"Ole", role:"Field" }
+    ];
 
     // ======== STATE ========
     const state = {
-      metadata: { date: new Date().toISOString().slice(0,10), opponent: "", notes: "", periodMinutes: 30 },
-      players: [], // {name, role: 'Field'|'Goalkeeper', attending: true}
+      metadata: { date: new Date().toISOString().slice(0,10), opponent: "", notes: "", competition: 'Annet', periodMinutes: 30 },
+      players: [], // {name, role: 'Field'|'Goalkeeper', attending: true|false}
       attending: [], // names
       currentPeriod: 1,
       clock: { running:false, startMs:0, elapsedMs:0 },
@@ -232,47 +263,59 @@
 
     // ======== SETUP ROSTER UI ========
     function init(){
-      state.players = DEFAULT_ROSTER.map(n => ({name:n, role:'Field', attending:false}));
+      state.players = DEFAULT_ROSTER.map(p => ({ name:p.name, role:p.role, attending:false }));
       renderRoster();
       restoreLocalIfAny();
+      onCompetitionChange();
     }
 
     function renderRoster(){
-      const box = $("rosterBox");
-      box.innerHTML = "";
-      const header = document.createElement('div'); header.className='grid'; header.style.gridTemplateColumns='1fr 120px 120px'; header.style.gap='6px';
-      header.innerHTML = `<div class="small muted">Player</div><div class="small muted">Attending</div><div class="small muted">Role</div>`;
-      box.appendChild(header);
-
+      const list = $("rosterList");
+      list.innerHTML = '';
       state.players.forEach((p, idx) => {
-        const row = document.createElement('div');
-        row.className='grid'; row.style.gridTemplateColumns='1fr 120px 120px'; row.style.gap='6px';
-        row.innerHTML = `
-          <input type=\"text\" value=\"${p.name}\" data-idx=\"${idx}\" oninput=\"onRename(event)\" />
-          <select data-idx=\"${idx}\" onchange=\"onAttendChange(event)\">
-            <option value=\"false\" ${!p.attending?'selected':''}>No</option>
-            <option value=\"true\" ${p.attending?'selected':''}>Yes</option>
-          </select>
-          <select data-idx=\"${idx}\" onchange=\"onRoleChange(event)\">
-            <option ${p.role==='Field'?'selected':''}>Field</option>
-            <option ${p.role==='Goalkeeper'?'selected':''}>Goalkeeper</option>
-          </select>
+        const item = document.createElement('div'); item.className='roster-item';
+        item.innerHTML = `
+          <div class=\"top\">
+            <input class=\"name-input\" type=\"text\" value=\"${p.name}\" data-idx=\"${idx}\" oninput=\"onRename(event)\" />
+            <label class=\"toggle\"><input type=\"checkbox\" data-idx=\"${idx}\" ${p.attending?'checked':''} onchange=\"onAttendToggle(event)\" /> Attending</label>
+          </div>
+          <div class=\"seg\">
+            <button class=\"opt ${p.role==='Field'?'active':''}\" data-idx=\"${idx}\" data-role=\"Field\" onclick=\"onRoleClick(event)\">Field</button>
+            <button class=\"opt ${p.role==='Goalkeeper'?'active':''}\" data-idx=\"${idx}\" data-role=\"Goalkeeper\" onclick=\"onRoleClick(event)\">Goalkeeper</button>
+          </div>
         `;
-        box.appendChild(row);
+        list.appendChild(item);
       });
     }
 
     function onRename(e){ const i=+e.target.dataset.idx; state.players[i].name = e.target.value.trim(); persistLocal(); }
-    function onAttendChange(e){ const i=+e.target.dataset.idx; state.players[i].attending = e.target.value==='true'; persistLocal(); }
-    function onRoleChange(e){ const i=+e.target.dataset.idx; state.players[i].role = e.target.value; persistLocal(); }
+    function onAttendToggle(e){ const i=+e.target.dataset.idx; state.players[i].attending = e.target.checked; persistLocal(); }
+    function onRoleClick(e){ const i=+e.target.dataset.idx; const r=e.target.dataset.role; state.players[i].role = r; renderRoster(); persistLocal(); }
 
     function addCustomPlayer(){ state.players.push({name:"New Player", role:'Field', attending:true}); renderRoster(); persistLocal(); }
+    function markFieldPlayersAttending(){ state.players.forEach(p=>{ if(p.role==='Field') p.attending=true; }); renderRoster(); persistLocal(); }
+    function selectNone(){ state.players.forEach(p=> p.attending=false ); renderRoster(); persistLocal(); }
+
+    // ======== COMPETITION & PERIOD MINUTES ========
+    function onCompetitionChange(){
+      const compSel = $("competition");
+      const comp = compSel.value; state.metadata.competition = comp;
+      const minutesInput = $("periodMinutes");
+      if(comp === 'Regional' || comp === 'Lokal'){
+        state.metadata.periodMinutes = 25; minutesInput.value = 25; minutesInput.disabled = true;
+      } else {
+        minutesInput.disabled = false; // allow manual for Annet
+        // keep current value
+      }
+      persistLocal();
+    }
 
     // ======== GAME FLOW ========
     function startGame(){
       state.metadata.opponent = $("opponent").value.trim();
       state.metadata.notes = $("notes").value.trim();
-      state.metadata.periodMinutes = Math.max(1, parseInt($("periodMinutes").value || '30', 10));
+      // competition already handled
+      state.metadata.periodMinutes = Math.max(1, parseInt($("periodMinutes").value || String(state.metadata.periodMinutes), 10));
       state.attending = state.players.filter(p=>p.attending).map(p=>p.name);
       if(state.attending.length === 0){ alert('Select at least one attending player.'); return; }
       $("setup").style.display='none'; $("ingame").style.display='block';
@@ -285,29 +328,17 @@
     // ======== CLOCK ========
     let _tickHandle = null;
     function toggleClock(){
-      if(state.clock.running){
-        state.clock.running=false; clearInterval(_tickHandle); _tickHandle=null; $("btnStart").textContent='Start'; $("btnStart").classList.add('success');
-      } else {
-        state.clock.running=true; state.clock.startMs = Date.now() - state.clock.elapsedMs;
-        _tickHandle = setInterval(tick, 250); $("btnStart").textContent='Stop'; $("btnStart").classList.remove('success');
-      }
+      if(state.clock.running){ state.clock.running=false; clearInterval(_tickHandle); _tickHandle=null; $("btnStart").textContent='Start'; $("btnStart").classList.add('success'); }
+      else { state.clock.running=true; state.clock.startMs = Date.now() - state.clock.elapsedMs; _tickHandle = setInterval(tick, 250); $("btnStart").textContent='Stop'; $("btnStart").classList.remove('success'); }
       persistLocal();
     }
-    function tick(){
-      const periodMs = state.metadata.periodMinutes * 60 * 1000;
-      state.clock.elapsedMs = Math.min(periodMs, Date.now() - state.clock.startMs);
-      updateClockUI(); if(state.clock.elapsedMs >= periodMs){ endPeriod(); }
-    }
+    function tick(){ const periodMs = state.metadata.periodMinutes * 60 * 1000; state.clock.elapsedMs = Math.min(periodMs, Date.now() - state.clock.startMs); updateClockUI(); if(state.clock.elapsedMs >= periodMs){ endPeriod(); } }
     function updateClockUI(){ $("clock").textContent = millisToClock(state.clock.elapsedMs); }
     function millisToClock(ms){ const t=Math.floor(ms/1000), mm=String(Math.floor(t/60)).padStart(2,'0'), ss=String(t%60).padStart(2,'0'); return `${mm}:${ss}`; }
     function nowClock(){ return millisToClock(state.clock.elapsedMs); }
     function endPeriod(){
-      if(state.currentPeriod === 1){
-        state.currentPeriod = 2; $("periodLabel").textContent = '2'; state.clock = {running:false,startMs:0,elapsedMs:0};
-        clearInterval(_tickHandle); _tickHandle=null; $("btnStart").textContent='Start'; $("btnStart").classList.add('success'); alert('Period 1 ended. Start Period 2 when ready.');
-      } else {
-        state.clock.running=false; clearInterval(_tickHandle); _tickHandle=null; updateClockUI(); alert('Period 2 ended. You can still add/edit events or submit the game.');
-      }
+      if(state.currentPeriod === 1){ state.currentPeriod = 2; $("periodLabel").textContent = '2'; state.clock = {running:false,startMs:0,elapsedMs:0}; clearInterval(_tickHandle); _tickHandle=null; $("btnStart").textContent='Start'; $("btnStart").classList.add('success'); alert('Period 1 ended. Start Period 2 when ready.'); }
+      else { state.clock.running=false; clearInterval(_tickHandle); _tickHandle=null; updateClockUI(); alert('Period 2 ended. You can still add/edit events or submit the game.'); }
       persistLocal();
     }
 
@@ -321,8 +352,7 @@
           <h4>${p.name}</h4>
           <div class=\"role\">${p.role}</div>
           <div class=\"actions\">${actionsHtml(p)}</div>
-        `;
-        container.appendChild(div);
+        `; container.appendChild(div);
       });
     }
 
@@ -345,12 +375,7 @@
       const ev = { period: state.currentPeriod, time: nowClock(), player, role, type, assist, zone };
       state.events.push(ev); renderEvents(); persistLocal();
     }
-
-    function renderEvents(){
-      const body = $("eventsBody"); body.innerHTML='';
-      state.events.forEach((ev, i) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
+    function renderEvents(){ const body = $("eventsBody"); body.innerHTML=''; state.events.forEach((ev, i) => { const tr = document.createElement('tr'); tr.innerHTML = `
           <td class=\"small muted\">${i+1}</td>
           <td>${ev.period}</td>
           <td>${ev.time}</td>
@@ -359,29 +384,12 @@
           <td>${ev.type}</td>
           <td>${ev.assist||''}</td>
           <td>${ev.zone||''}</td>
-        `; body.appendChild(tr);
-      }); updateKPIs();
-    }
-
-    function updateKPIs(){
-      const goals = state.events.filter(e=>e.type==='Goal').length;
-      const assists = state.events.filter(e=>e.assist).length;
-      const miss = state.events.filter(e=>e.type==='Miss').length;
-      const saves = state.events.filter(e=>e.type==='Save').length;
-      const conceded = state.events.filter(e=>e.type==='Goal Conceded').length;
-      $("kpiGoals").textContent = goals;
-      $("kpiAssists").textContent = assists;
-      $("kpiMiss").textContent = miss;
-      $("kpiSaves").textContent = saves;
-      $("kpiConceded").textContent = conceded;
-    }
-
+        `; body.appendChild(tr); }); updateKPIs(); }
+    function updateKPIs(){ const goals = state.events.filter(e=>e.type==='Goal').length; const assists = state.events.filter(e=>e.assist).length; const miss = state.events.filter(e=>e.type==='Miss').length; const saves = state.events.filter(e=>e.type==='Save').length; const conceded = state.events.filter(e=>e.type==='Goal Conceded').length; $("kpiGoals").textContent = goals; $("kpiAssists").textContent = assists; $("kpiMiss").textContent = miss; $("kpiSaves").textContent = saves; $("kpiConceded").textContent = conceded; }
     function undoLast(){ state.events.pop(); renderEvents(); persistLocal(); }
 
     // ======== REUSABLE ZONE PICKER (SVG) ========
     function zoneSVG(selected){
-      // SVG geometry approximates the diagram: arcs (6m dark, 9m dashed), red lines, diagonal sectors
-      // Clickable hit areas (transparent) are circles positioned near numbers 1..8 for easy tapping.
       const isSel = (z) => (selected == z ? ' active' : '');
       return `
       <svg class=\"zone\" viewBox=\"0 0 554 327\" xmlns=\"http://www.w3.org/2000/svg\" aria-label=\"Handball shooting zones\">
@@ -390,13 +398,10 @@
         <path class=\"six\" d=\"M170,0 H384 V80 A235,235 0 0 1 170,80 Z\"/>
         <path class=\"redline\" d=\"M200,120 Q277,100 354,120\"/>
         <path class=\"nine\" d=\"M120,0 H434 V130 A277,277 0 0 1 120,130 Z\"/>
-        <!-- Diagonal sector lines from goal center -->
         <line class=\"diag\" x1=\"277\" y1=\"10\" x2=\"35\" y2=\"220\"/>
         <line class=\"diag\" x1=\"277\" y1=\"10\" x2=\"165\" y2=\"260\"/>
         <line class=\"diag\" x1=\"277\" y1=\"10\" x2=\"389\" y2=\"260\"/>
         <line class=\"diag\" x1=\"277\" y1=\"10\" x2=\"520\" y2=\"220\"/>
-
-        <!-- Labels -->
         <text class=\"num\" x=\"65\" y=\"100\">1</text>
         <text class=\"num\" x=\"205\" y=\"120\">2</text>
         <text class=\"num\" x=\"277\" y=\"140\">3</text>
@@ -405,8 +410,6 @@
         <text class=\"num\" x=\"140\" y=\"220\">6</text>
         <text class=\"num\" x=\"277\" y=\"250\">7</text>
         <text class=\"num\" x=\"414\" y=\"220\">8</text>
-
-        <!-- Clickable hit areas (circles near numbers) -->
         <circle class=\"hit${isSel(1)}\" data-zone=\"1\" cx=\"65\" cy=\"100\" r=\"28\"/>
         <circle class=\"hit${isSel(2)}\" data-zone=\"2\" cx=\"205\" cy=\"120\" r=\"28\"/>
         <circle class=\"hit${isSel(3)}\" data-zone=\"3\" cx=\"277\" cy=\"140\" r=\"28\"/>
@@ -419,115 +422,44 @@
     }
 
     function renderZonePicker(targetId, selected, onSelect){
-      const tgt = $(targetId);
-      tgt.innerHTML = zoneSVG(selected);
-      tgt.querySelectorAll('[data-zone]').forEach(el=>{
-        el.addEventListener('click', () => { onSelect(parseInt(el.dataset.zone,10)); });
-      });
+      const tgt = $(targetId); tgt.innerHTML = zoneSVG(selected);
+      tgt.querySelectorAll('[data-zone]').forEach(el=>{ el.addEventListener('click', () => { onSelect(parseInt(el.dataset.zone,10)); }); });
     }
 
     // ======== GOAL (FIELD) ========
     function openGoalModal(player){
       state.goalForm = { player, assist:"", zone:null };
       $("goalWho").textContent = `${player} – Field`;
-
-      // Assist list
       const list = $("assistList"); list.innerHTML = '';
       const attending = state.players.filter(p=>p.attending && p.role==='Field' && p.name!==player);
-      const noneBtn = document.createElement('button'); noneBtn.className='btn ghost'; noneBtn.textContent = 'No assist'; noneBtn.style.margin='0 0 8px 0';
-      noneBtn.onclick = () => { state.goalForm.assist=''; highlightAssist(); };
-      list.appendChild(noneBtn);
-      attending.forEach(p=>{
-        const b = document.createElement('button'); b.className='btn'; b.style.display='block'; b.style.width='100%'; b.style.margin='4px 0';
-        b.textContent = p.name; b.onclick = () => { state.goalForm.assist=p.name; highlightAssist(); };
-        list.appendChild(b);
-      });
-
+      const noneBtn = document.createElement('button'); noneBtn.className='btn ghost'; noneBtn.textContent = 'No assist'; noneBtn.style.margin='0 0 8px 0'; noneBtn.onclick = () => { state.goalForm.assist=''; highlightAssist(); }; list.appendChild(noneBtn);
+      attending.forEach(p=>{ const b = document.createElement('button'); b.className='btn'; b.style.display='block'; b.style.width='100%'; b.style.margin='4px 0'; b.textContent = p.name; b.onclick = () => { state.goalForm.assist=p.name; highlightAssist(); }; list.appendChild(b); });
       highlightAssist();
-      renderZonePicker('goalZone', state.goalForm.zone, (z)=>{ state.goalForm.zone=z; $("btnSaveGoal").disabled = !(state.goalForm.zone); updateZoneHighlight('goalZone', z); });
-      $("btnSaveGoal").disabled = true;
-      $("goalModal").style.display='flex';
+      renderZonePicker('goalZone', state.goalForm.zone, (z)=>{ state.goalForm.zone=z; $("btnSaveGoal").disabled = !(state.goalForm.zone); updateZoneHighlight('goalZone', z); }); $("btnSaveGoal").disabled = true; $("goalModal").style.display='flex';
     }
 
-    function updateZoneHighlight(targetId, selected){
-      const tgt = $(targetId);
-      tgt.querySelectorAll('.hit').forEach(h=>{
-        if(parseInt(h.dataset.zone,10)===selected) h.classList.add('active'); else h.classList.remove('active');
-      });
-    }
-
-    function highlightAssist(){
-      const list = $("assistList");
-      Array.from(list.querySelectorAll('button')).forEach(btn => {
-        if(btn.textContent === (state.goalForm.assist || 'No assist')) btn.style.outline='2px solid var(--accent)'; else btn.style.outline='none';
-      });
-    }
-
+    function updateZoneHighlight(targetId, selected){ const tgt = $(targetId); tgt.querySelectorAll('.hit').forEach(h=>{ if(parseInt(h.dataset.zone,10)===selected) h.classList.add('active'); else h.classList.remove('active'); }); }
+    function highlightAssist(){ const list = $("assistList"); Array.from(list.querySelectorAll('button')).forEach(btn => { if(btn.textContent === (state.goalForm.assist || 'No assist')) btn.style.outline='2px solid var(--accent)'; else btn.style.outline='none'; }); }
     function closeGoalModal(){ $("goalModal").style.display='none'; }
     function confirmGoal(){ const g = state.goalForm; if(!g.zone){ alert('Select a zone'); return; } addEvent(g.player,'Field','Goal',g.assist||'',String(g.zone)); closeGoalModal(); }
 
     // ======== CONCEDE (GOALKEEPER) ========
-    function openConcedeModal(player){
-      state.concedeForm = { player, zone:null };
-      $("concedeWho").textContent = `${player} – Goalkeeper`;
-      renderZonePicker('concedeZone', state.concedeForm.zone, (z)=>{ state.concedeForm.zone=z; $("btnSaveConcede").disabled = !(state.concedeForm.zone); updateZoneHighlight('concedeZone', z); });
-      $("btnSaveConcede").disabled = true;
-      $("concedeModal").style.display='flex';
-    }
+    function openConcedeModal(player){ state.concedeForm = { player, zone:null }; $("concedeWho").textContent = `${player} – Goalkeeper`; renderZonePicker('concedeZone', state.concedeForm.zone, (z)=>{ state.concedeForm.zone=z; $("btnSaveConcede").disabled = !(state.concedeForm.zone); updateZoneHighlight('concedeZone', z); }); $("btnSaveConcede").disabled = true; $("concedeModal").style.display='flex'; }
     function closeConcedeModal(){ $("concedeModal").style.display='none'; }
     function confirmConcede(){ const c = state.concedeForm; if(!c.zone){ alert('Select a zone'); return; } addEvent(c.player,'Goalkeeper','Goal Conceded','',String(c.zone)); closeConcedeModal(); }
 
     // ======== LOCAL STORAGE ========
-    const LS_KEY = 'handball_stats_game_v4';
+    const LS_KEY = 'handball_stats_game_v5';
     function persistLocal(){ localStorage.setItem(LS_KEY, JSON.stringify({ state })); }
-    function restoreLocalIfAny(){
-      const raw = localStorage.getItem(LS_KEY); if(!raw) return;
-      try{ const snap = JSON.parse(raw); if(snap && snap.state){ Object.assign(state, snap.state); } }catch{}
-      $("opponent").value = state.metadata.opponent||'';
-      $("notes").value = state.metadata.notes||'';
-      $("periodMinutes").value = state.metadata.periodMinutes||30;
-      renderRoster();
-    }
+    function restoreLocalIfAny(){ const raw = localStorage.getItem(LS_KEY); if(!raw) return; try{ const snap = JSON.parse(raw); if(snap && snap.state){ Object.assign(state, snap.state); } }catch{}; $("opponent").value = state.metadata.opponent||''; $("notes").value = state.metadata.notes||''; $("competition").value = state.metadata.competition||'Annet'; $("periodMinutes").value = state.metadata.periodMinutes||30; renderRoster(); }
     function loadFromLocal(){ restoreLocalIfAny(); alert('Loaded any saved game data from this device.'); }
     function clearLocal(){ localStorage.removeItem(LS_KEY); alert('Cleared local saved data.'); }
 
     // ======== CSV DOWNLOAD ========
-    function downloadCSV(){
-      const header = ['Date','Opponent','Notes','Period','Time','Player','Role','Event','Assist','Zone'];
-      const rows = state.events.map(ev=>[
-        state.metadata.date,
-        state.metadata.opponent||'',
-        state.metadata.notes||'',
-        ev.period, ev.time, ev.player, ev.role, ev.type, ev.assist||'', ev.zone||''
-      ]);
-      const csv = [header].concat(rows).map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');
-      const blob = new Blob([csv], {type:'text/csv'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = `handball_stats_${state.metadata.date}.csv`;
-      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-    }
+    function downloadCSV(){ const header = ['Date','Opponent','Competition','Notes','Period','Time','Player','Role','Event','Assist','Zone']; const rows = state.events.map(ev=>[ state.metadata.date, state.metadata.opponent||'', state.metadata.competition||'', state.metadata.notes||'', ev.period, ev.time, ev.player, ev.role, ev.type, ev.assist||'', ev.zone||'' ]); const csv = [header].concat(rows).map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n'); const blob = new Blob([csv], {type:'text/csv'}); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `handball_stats_${state.metadata.date}.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
 
     // ======== SUBMIT TO GOOGLE SHEETS (Apps Script Web App) ========
-    async function submitToSheets(){
-      if(!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes('PASTE_WEB_APP_URL_HERE')){ alert('Please configure GOOGLE_SCRIPT_URL at the top of the file.'); return; }
-      if(state.events.length === 0){ alert('No events to submit.'); return; }
-      const payload = {
-        metadata: { date: state.metadata.date, opponent: state.metadata.opponent||'', notes: state.metadata.notes||'', periodMinutes: state.metadata.periodMinutes },
-        players: state.players,
-        events: state.events,
-        gameId: `${state.metadata.date}_${Date.now()}`
-      };
-      try{
-        const body = new URLSearchParams({ data: JSON.stringify(payload) }).toString();
-        const res = await fetch(GOOGLE_SCRIPT_URL, { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body });
-        if(!res.ok){ throw new Error('Network error'); }
-        let msg = 'Submitted to Google Sheet.';
-        try{ const j = await res.json(); if(j && j.status==='ok' && j.rowsAppended){ msg += ` Rows appended: ${j.rowsAppended}`; } }catch{}
-        alert(msg);
-        localStorage.setItem(LS_KEY+"_backup", JSON.stringify({state}));
-        state.events = []; renderEvents(); persistLocal();
-      } catch(err){ console.error(err); alert('Submit failed. Please check your internet connection and the Apps Script URL.'); }
-    }
+    async function submitToSheets(){ if(!GOOGLE_SCRIPT_URL || GOOGLE_SCRIPT_URL.includes('PASTE_WEB_APP_URL_HERE')){ alert('Please configure GOOGLE_SCRIPT_URL at the top of the file.'); return; } if(state.events.length === 0){ alert('No events to submit.'); return; } const payload = { metadata: { date: state.metadata.date, opponent: state.metadata.opponent||'', competition: state.metadata.competition||'', notes: state.metadata.notes||'', periodMinutes: state.metadata.periodMinutes }, players: state.players, events: state.events, gameId: `${state.metadata.date}_${Date.now()}` }; try{ const body = new URLSearchParams({ data: JSON.stringify(payload) }).toString(); const res = await fetch(GOOGLE_SCRIPT_URL, { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body }); if(!res.ok){ throw new Error('Network error'); } let msg = 'Submitted to Google Sheet.'; try{ const j = await res.json(); if(j && j.status==='ok' && j.rowsAppended){ msg += ` Rows appended: ${j.rowsAppended}`; } }catch{} alert(msg); localStorage.setItem(LS_KEY+"_backup", JSON.stringify({state})); state.events = []; renderEvents(); persistLocal(); } catch(err){ console.error(err); alert('Submit failed. Please check your internet connection and the Apps Script URL.'); } }
 
     // Boot
     init();
