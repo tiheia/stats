@@ -224,6 +224,9 @@
   <script>
     // ---------- Config ----------
     const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbznSnfDNQIVv-G4ILY5mhLrcKt6BgZ1Le0k08YlqEPrewh-JC9azb8Tfk-osxPDEBLn/exec";
+    // New LS key to avoid stale/empty rosters from earlier versions:
+    const LS_KEY = 'handball_stats_no_v22g';
+
     const DEFAULT_ROSTER = [
       { name:'Jacob', role:'Utespiller', star:false, attending:false },
       { name:'Patrick F', role:'Målvakt', star:false, attending:false },
@@ -247,7 +250,6 @@
       { name:'Adrian A', role:'Utespiller', star:false, attending:false },
       { name:'Adrian B', role:'Utespiller', star:false, attending:false }
     ];
-    const LS_KEY = 'handball_stats_no_v22f';
 
     // ---------- State ----------
     const state = {
@@ -271,6 +273,7 @@
     const $ = (id) => document.getElementById(id);
     const escapeHtml = (s) => String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
     const showToast = (msg) => { const t = $('toast'); if(!t) return; t.textContent = msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'), 1800); };
+
     const loadLocal = () => { try { const raw = localStorage.getItem(LS_KEY); return raw ? JSON.parse(raw) : null; } catch { return null; } };
     const saveLocal = () => {
       try {
@@ -400,3 +403,149 @@
       updateClockLabel(state.clock.elapsedMs);
     }
 
+    function updateClockLabel(ms) {
+      const totalSec = Math.floor(ms / 1000);
+      const mm = String(Math.floor(totalSec / 60)).padStart(2,'0');
+      const ss = String(totalSec % 60).padStart(2,'0');
+      $('clock').textContent = `${mm}:${ss}`;
+    }
+
+    function endPeriod() {
+      if (state.clock.running) toggleClock();
+      if (state.currentPeriod === 1) {
+        state.currentPeriod = 2;
+        $('periodLabel').textContent = '2';
+        state.clock.elapsedMs = 0;
+        updateClockLabel(0);
+        showToast('2. omgang');
+      } else {
+        showToast('Kamp ferdig');
+      }
+      saveLocal();
+    }
+
+    // ---------- Events/log (placeholders so UI works) ----------
+    function undoLast(){ showToast('Angre (ikke implementert)'); }
+    function downloadCSV(){
+      const rows = [
+        ['#','Omgang','Tid','Spiller','Rolle','Hendelse','Assist','Sone'],
+      ];
+      const csv = rows.map(r => r.map(x => `"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'events.csv'; a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // ---------- Summary modal (placeholder) ----------
+    function openSummary(){ $('summaryModal').style.display='flex'; renderSummary(); }
+    function closeSummary(){ $('summaryModal').style.display='none'; }
+    function renderSummary(){
+      const el = $('summaryBody');
+      el.innerHTML = `<div class="small muted">Oppsummering kommer her (ikke implementert).</div>`;
+    }
+
+    // ---------- Local storage actions ----------
+    function loadFromLocal() {
+      const data = loadLocal();
+      if (!data) { showToast('Fant ingen lagrede data'); return; }
+      state.metadata = { ...state.metadata, ...data.metadata };
+      state.players = Array.isArray(data.players) && data.players.length ? data.players : DEFAULT_ROSTER.map(p=>({...p}));
+      state.events = Array.isArray(data.events) ? data.events : [];
+      state.currentPeriod = data.currentPeriod || 1;
+      if (data.clock && typeof data.clock.elapsedMs === 'number') {
+        state.clock.elapsedMs = data.clock.elapsedMs;
+        updateClockLabel(state.clock.elapsedMs);
+      }
+      bindSetupInputs();
+      renderRosterList();
+      showToast('Lastet lagret data');
+    }
+
+    function clearLocal() {
+      try { localStorage.removeItem(LS_KEY); } catch {}
+      state.metadata = { date: new Date().toISOString().slice(0,10), opponent: '', notes: '', competition: 'Annet', periodMinutes: 30 };
+      state.players = DEFAULT_ROSTER.map(p => ({...p}));
+      state.events = [];
+      state.currentPeriod = 1;
+      state.clock = { running:false, startMs:0, elapsedMs:0, timerId:null };
+      bindSetupInputs();
+      renderRosterList();
+      if ($('ingame').style.display !== 'none') updateClockLabel(0);
+      showToast('Lokal lagring tømt');
+    }
+
+    // ---------- Submit to Google Apps Script ----------
+    async function submitToSheets(){
+      try {
+        if(!GOOGLE_SCRIPT_URL){ alert('Mangler Google-URL.'); return; }
+        if(state.submitting) return;
+        state.submitting=true;
+        const btn=$('submitBtn'); if(btn){ btn.disabled=true; btn.textContent='Sender...'; }
+        const payload = { metadata: state.metadata, players: state.players, events: state.events };
+        const blob = new Blob([JSON.stringify(payload)], {type:'application/json'});
+        let sent = false;
+        if('sendBeacon' in navigator){ try { sent = navigator.sendBeacon(GOOGLE_SCRIPT_URL, blob); } catch{} }
+        if(!sent){
+          try {
+            const res = await fetch(GOOGLE_SCRIPT_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload), redirect:'follow', referrerPolicy:'no-referrer' });
+            if(!res.ok) throw new Error('HTTP '+res.status);
+          } catch(err){
+            await fetch(GOOGLE_SCRIPT_URL, { method:'POST', mode:'no-cors', body: JSON.stringify(payload) });
+          }
+        }
+        showToast('Kamp sendt!');
+        clearLocal();
+      } catch(err){
+        console.error(err);
+        alert('Nettverksfeil: '+err);
+      } finally {
+        state.submitting=false;
+        const btn=$('submitBtn'); if(btn){ btn.disabled=false; btn.textContent='Send inn kamp → Google-ark'; }
+      }
+    }
+
+    // ---------- Init ----------
+    function init() {
+      const data = loadLocal();
+      if (data && Array.isArray(data.players) && data.players.length) {
+        state.players = data.players;
+        state.metadata = { ...state.metadata, ...data.metadata };
+        state.events = Array.isArray(data.events) ? data.events : [];
+        state.currentPeriod = data.currentPeriod || 1;
+      } else {
+        state.players = DEFAULT_ROSTER.map(p => ({...p}));
+      }
+      bindSetupInputs();
+      renderRosterList();
+      window.addEventListener('beforeunload', saveLocal);
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+
+    // ---------- Expose for HTML onclick ----------
+    window.markAllAttending = markAllAttending;
+    window.markFieldPlayersAttending = markFieldPlayersAttending;
+    window.selectNone = selectNone;
+    window.onCompetitionChange = onCompetitionChange;
+    window.loadFromLocal = loadFromLocal;
+    window.clearLocal = clearLocal;
+    window.startGame = startGame;
+    window.toggleClock = toggleClock;
+    window.endPeriod = endPeriod;
+    window.goBackToSetup = function() {
+      if (state.clock.running) toggleClock();
+      $('ingame')?.setAttribute('style','display:none');
+      $('setup')?.setAttribute('style','display:grid');
+      saveLocal();
+    };
+    window.openSummary = openSummary;
+    window.closeSummary = closeSummary;
+    window.renderSummary = renderSummary;
+    window.undoLast = undoLast;
+    window.downloadCSV = downloadCSV;
+    window.submitToSheets = submitToSheets;
+  </script>
+</body>
+</html>
